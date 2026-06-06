@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Powered PC Store</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="main-header">
+        <div class="user-nav">
+            <div class="site-logo">
+                <span class="logo-icon">⚡</span> AI-PC <span class="logo-text">Builder</span>
+            </div>
+
+            <div class="nav-right">
+                <div id="authArea">
+                    <span id="welcomeMsg" style="display: none;">Hoş geldin, <strong
+                            id="loggedInUser"></strong></span>
+                    <button id="loginBtn" class="nav-btn">Giriş Yap</button>
+                </div>
+                <button id="ordersBtn" class="cart-icon" style="cursor: pointer; display: none;">
+                    📦 Siparişlerim
+                </button>
+                <button id="cartBtn" class="cart-icon" style="cursor: pointer;">
+                    🛒 Sepetim (<span id="cartCount">0</span>)
+                </button>
+            </div>
+        </div>
+        <h1>🚀 Yapay Zeka Destekli Akıllı Sistem Toplama Platformu</h1>
+    </div>
+
+    <div class="app-container">
+        <div class="chat-section">
+            <h2>🤖 Akıllı Sistem Sihirbazı</h2>
+            <div class="chat-box" id="chatBox">
+                <div class="message ai-message">
+                    Merhaba! Ben akıllı PC toplama asistanın. Bütçeni ve oynamak istediğin oyunları (Örn: LoL, render
+                    vb.) söylersen sana veritabanımızdan en uyumlu sistemi toplayabilirim!
+                </div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="userInput" placeholder="Bütçenizi ve isteklerinizi yazın..." />
+                <button id="sendBtn">Gönder</button>
+            </div>
+        </div>
+
+        <div class="recommendation-section">
+            <h2>🖥️ Önerilen Donanım Bileşenleri</h2>
+            <div id="totalPriceContainer" class="total-price-box" style="display: none;">
+                Önerilen Sistem Toplamı: <span id="totalPrice">0</span> TL
+            </div>
+            <div class="products-grid" id="productsGrid">
+                <div class="empty-state">Henüz bir sistem toplatmadınız. Sol taraftan yapay zekaya isteklerinizi yazarak
+                    başlayabilirsiniz.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span id="closeModal" class="close-btn">&times;</span>
+            <h2 style="border-bottom:none; color: white;">Kullanıcı Girişi</h2>
+            
+            <!-- Custom Notification Message -->
+            <div id="authMessage" style="display: none; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; text-align: center; font-weight: 500; transition: all 0.3s ease;"></div>
+
+            <div class="form-group" id="nameGroup" style="display: none;">
+                <label>Ad Soyad</label>
+                <input type="text" id="nameInput" placeholder="Ad Soyad" />
+            </div>
+            <div class="form-group">
+                <label id="emailLabel">E-posta veya Kullanıcı Adı</label>
+                <input type="text" id="emailInput" placeholder="ornek@mail.com" />
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="passwordInput" placeholder="••••••••" />
+            </div>
+            <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+                <label>Şifre Tekrarı</label>
+                <input type="password" id="confirmPasswordInput" placeholder="••••••••" />
+            </div>
+            <button id="submitLoginBtn" class="buy-btn" style="margin-top: 10px;">Giriş Yap</button>
+            <p id="authToggleText" style="margin-top: 15px; font-size: 0.9rem; text-align: center; color: #94a3b8;">
+                Hesabınız yok mu? <a href="#" id="toggleAuthBtn" style="color: #10b981; text-decoration: none; font-weight: 600;">Kayıt Ol</a>
+            </p>
+        </div>
+    </div>
+
+    <div id="ordersModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 550px; max-width: 90%; max-height: 80vh; overflow-y: auto;">
+            <span id="closeOrdersModal" class="close-btn">&times;</span>
+            <h2 style="border-bottom:none; color: white;">📦 Sipariş Geçmişim</h2>
+            <div id="ordersList" style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px;">
+                <!-- Siparişler buraya dinamik olarak eklenecek -->
+            </div>
+        </div>
+    </div>
+
+    <script media="src" src="script.js"></script>
+</body>
+
+</html>

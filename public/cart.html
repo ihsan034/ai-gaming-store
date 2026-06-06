@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sepetim - Ödeme Sayfası</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            height: auto !important;
+            min-height: 100vh;
+            overflow-y: auto !important;
+            align-items: flex-start !important;
+            padding: 40px 0;
+        }
+        .checkout-container {
+            width: 60%; 
+            margin: 50px auto; 
+            background-color: rgba(26, 29, 46, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 30px; 
+            border-radius: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: white; 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .cart-item {
+            display: flex; 
+            justify-content: space-between; 
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .cart-total {
+            text-align: right; 
+            margin-top: 20px; 
+            font-size: 1.5rem; 
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .checkout-btn {
+            width: 100%; 
+            padding: 15px; 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none; 
+            color: white; 
+            font-size: 1.2rem; 
+            font-weight: 600;
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin-top: 20px;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        }
+        
+        .checkout-btn:hover {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .back-link { 
+            color: #10b981; 
+            text-decoration: none; 
+            display: inline-block; 
+            margin-bottom: 20px; 
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        
+        .back-link:hover {
+            color: #34d399;
+            transform: translateX(-3px);
+        }
+
+        /* Form Stilleri */
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .form-group label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        
+        .checkout-container input, 
+        .checkout-container textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #2d3250;
+            background-color: #131625;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+            font-size: 0.95rem;
+        }
+        
+        .checkout-container input:focus, 
+        .checkout-container textarea:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes popScale {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .checkout-container {
+                width: 90%;
+                margin: 20px auto;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="checkout-container" id="checkoutContainer">
+        <a href="/" class="back-link">← Mağazaya Dön</a>
+        <h2 style="border-bottom: 2px solid rgba(255, 255, 255, 0.05); padding-bottom: 10px; color: #10b981;">🛒 Sepetiniz ve Ödeme</h2>
+        
+        <div id="cartItemsList"></div>
+        <div class="cart-total">Toplam: <strong id="cartTotalPrice">0</strong> TL</div>
+        
+        <!-- Müşteri Teslimat Bilgileri Formu -->
+        <div id="checkoutFormSection" style="margin-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 20px;">
+            <h3 style="color: #10b981; margin-bottom: 15px; font-size: 1.2rem;">🚚 Teslimat Bilgileri</h3>
+            
+            <div class="form-group">
+                <label for="checkoutPhone">Telefon Numarası</label>
+                <input type="tel" id="checkoutPhone" placeholder="05XX XXX XX XX" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="checkoutAddress">Teslimat Adresi</label>
+                <textarea id="checkoutAddress" placeholder="Mahalle, Sokak, Daire, İlçe/İl bilgilerini detaylı giriniz..." rows="4" required></textarea>
+            </div>
+        </div>
+        
+        <div id="checkoutError" style="color: #ef4444; font-weight: 600; margin-top: 15px; text-align: center; display: none;">
+            ⚠️ Lütfen telefon numaranızı ve teslimat adresinizi doldurun!
+        </div>
+        
+        <button class="checkout-btn" id="finishOrderBtn">Ödemeyi Tamamla</button>
+    </div>
+
+    <script>
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const checkoutContainer = document.getElementById('checkoutContainer');
+        const cartItemsList = document.getElementById('cartItemsList');
+        const cartTotalPrice = document.getElementById('cartTotalPrice');
+        const finishOrderBtn = document.getElementById('finishOrderBtn');
+
+        let total = 0;
+
+        if (cart.length === 0) {
+            cartItemsList.innerHTML = "<p style='color: #94a3b8; text-align: center; margin: 30px 0;'>Sepetiniz boş.</p>";
+            // Eğer sepet boşsa form alanlarını ve butonu gizle
+            document.getElementById('checkoutFormSection').style.display = 'none';
+            finishOrderBtn.style.display = 'none';
+        } else {
+            cart.forEach(item => {
+                total += item.price;
+                cartItemsList.innerHTML += `
+                    <div class="cart-item">
+                        <div>
+                            <strong>${item.brand} ${item.model}</strong> <br> 
+                            <small style="color: #94a3b8">${item.category}</small>
+                        </div>
+                        <div style="font-weight: bold; color: #10b981;">${item.price.toLocaleString('tr-TR')} TL</div>
+                    </div>
+                `;
+            });
+        }
+        cartTotalPrice.innerText = total.toLocaleString('tr-TR');
+
+        // HTML XSS Önleme Fonksiyonu
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        finishOrderBtn.addEventListener('click', () => {
+            if (cart.length === 0) return;
+            
+            const phone = document.getElementById('checkoutPhone').value.trim();
+            const address = document.getElementById('checkoutAddress').value.trim();
+            const errorDiv = document.getElementById('checkoutError');
+
+            // Form doğrulama kontrolü
+            if (!phone || !address) {
+                errorDiv.style.display = 'block';
+                errorDiv.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+            errorDiv.style.display = 'none';
+
+            // Siparişi geçmişe kaydet
+            const currentUser = JSON.parse(localStorage.getItem('user')) || { email: "misafir@mail.com" };
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const newOrder = {
+                id: 'ORD-' + Date.now().toString().slice(-6),
+                userEmail: currentUser.email,
+                date: new Date().toLocaleDateString('tr-TR'),
+                time: new Date().toLocaleTimeString('tr-TR').slice(0, 5),
+                items: [...cart],
+                total: total,
+                phone: phone,
+                address: address
+            };
+            orders.push(newOrder);
+            localStorage.setItem('orders', JSON.stringify(orders));
+
+            // Sepeti temizle
+            localStorage.removeItem('cart');
+
+            // Başarı ekranını yerleştir
+            checkoutContainer.innerHTML = `
+                <div style="text-align: center; padding: 30px 10px; animation: fadeIn 0.6s ease-out;">
+                    <div style="font-size: 5rem; color: #10b981; margin-bottom: 20px; display: inline-block; animation: popScale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">✓</div>
+                    <h2 style="color: #10b981; margin-bottom: 15px; border-bottom: none; font-size: 1.8rem;">Siparişiniz Başarıyla Alındı!</h2>
+                    <p style="color: #cbd5e1; font-size: 1.05rem; line-height: 1.6; margin-bottom: 30px;">
+                        Tebrikler! Ödemeniz başarıyla alındı.<br>
+                        Sisteminiz belirttiğiniz adrese gönderilmek üzere özenle hazırlanıyor.
+                    </p>
+                    <div style="background-color: rgba(19, 22, 37, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); padding: 20px; border-radius: 10px; margin-bottom: 30px; text-align: left;">
+                        <p style="margin-bottom: 12px; font-weight: bold; color: #10b981; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 6px;">🚚 Teslimat Bilgileri</p>
+                        <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 6px;"><strong>Telefon:</strong> <span style="color: #f1f5f9;">${escapeHtml(phone)}</span></p>
+                        <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;"><strong>Adres:</strong> <span style="color: #f1f5f9;">${escapeHtml(address)}</span></p>
+                    </div>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">
+                        <span id="countdownTimer" style="color: #10b981; font-weight: bold;">7</span> saniye içinde ana sayfaya yönlendiriliyorsunuz...
+                    </p>
+                    <a href="/" class="checkout-btn" style="text-decoration: none; display: inline-block; width: auto; padding: 10px 30px; font-size: 1rem; margin-top: 0;">Hemen Mağazaya Dön</a>
+                </div>
+            `;
+
+            // Otomatik yönlendirme sayacı
+            let seconds = 7;
+            const timerSpan = document.getElementById('countdownTimer');
+            const interval = setInterval(() => {
+                seconds--;
+                if (timerSpan) timerSpan.innerText = seconds;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                    window.location.href = '/';
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

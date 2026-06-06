@@ -1,0 +1,485 @@
+/* =========================================================
+   1. GENEL AYARLAR VE RENK PALETİ
+   ========================================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(-45deg, #021a14, #063628, #03140e, #0a2920);
+    background-size: 400% 400%;
+    animation: smoothFlow 15s ease infinite;
+    color: #e2e8f0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+@keyframes smoothFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* =========================================================
+   2. ÜST BİLGİ VE NAVİGASYON (HEADER)
+   ========================================================= */
+.main-header {
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.user-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 40px 15px;
+    width: 95vw;
+    font-size: 0.95rem;
+    border-bottom: 2px solid rgba(16, 185, 129, 0.6);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);
+    margin-bottom: 20px;
+}
+
+.site-logo {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
+.site-logo .logo-icon {
+    font-size: 1.8rem;
+    animation: floatIcon 3s ease-in-out infinite;
+}
+
+.site-logo .logo-text {
+    color: #10b981;
+}
+
+@keyframes floatIcon {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-4px);
+        filter: drop-shadow(0 0 12px rgba(79, 172, 254, 0.9));
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+#authArea {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#welcomeMsg {
+    background-color: #1a1d2e;
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1px solid #2d3250;
+    color: #94a3b8;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+#welcomeMsg strong {
+    color: #10b981;
+    letter-spacing: 0.5px;
+}
+
+/* Ortak Buton Stilleri */
+.nav-btn,
+#sendBtn,
+.buy-btn,
+#submitLoginBtn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+}
+
+.nav-btn:hover,
+#sendBtn:hover,
+.buy-btn:hover,
+#submitLoginBtn:hover {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+/* Sepet İkonu */
+.cart-icon {
+    background-color: rgba(35, 40, 64, 0.6);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    padding: 8px 24px;
+    border-radius: 20px;
+    font-weight: bold;
+    color: #10b981;
+    transition: 0.3s;
+}
+
+.cart-icon:hover {
+    background-color: #10b981;
+    color: #021a14;
+    border-color: #10b981;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+/* =========================================================
+   3. ANA BAŞLIK
+   ========================================================= */
+.main-header h1 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #38bdf8 0%, #34d399 50%, #10b981 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+    padding-bottom: 5px;
+}
+
+.main-header p {
+    font-size: 1rem;
+    color: #64748b;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+}
+
+/* =========================================================
+   4. ANA KONTEYNER (CAM EFEKTİ)
+   ========================================================= */
+.app-container {
+    display: flex;
+    width: 95vw;
+    height: 75vh;
+    background-color: rgba(26, 29, 46, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+}
+
+/* =========================================================
+   5. SOL TARAF: YAPAY ZEKA SOHBETİ
+   ========================================================= */
+.chat-section {
+    flex: 1;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: rgba(19, 22, 37, 0.3);
+}
+
+h2 {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    color: #10b981;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 10px;
+}
+
+.chat-box {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message {
+    padding: 12px 16px;
+    border-radius: 12px;
+    max-width: 85%;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.ai-message {
+    background-color: #232840;
+    color: #e2e8f0;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    border-left: 4px solid #10b981;
+}
+
+.user-message {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-weight: 500;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+
+.input-area {
+    display: flex;
+    gap: 10px;
+}
+
+#userInput {
+    flex: 1;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid #2d3250;
+    background-color: #1a1d2e;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    transition: 0.3s;
+}
+
+#userInput:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+/* =========================================================
+   6. SAĞ TARAF: ÖNERİLEN ÜRÜNLER
+   ========================================================= */
+.recommendation-section {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.total-price-box {
+    background-color: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.05);
+}
+
+.products-grid {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 15px;
+    align-content: start;
+}
+
+.product-card {
+    background-color: rgba(35, 40, 64, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.product-card:hover {
+    background-color: rgba(45, 50, 75, 0.7);
+    border-color: #10b981;
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+}
+
+.product-badge {
+    background-color: #10b981;
+    color: #021a14;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 4px;
+    align-self: flex-start;
+    margin-bottom: 8px;
+}
+
+.product-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.product-brand {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
+
+.product-price {
+    font-size: 1.2rem;
+    color: #10b981;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #64748b;
+    margin-top: 100px;
+    font-size: 1.1rem;
+}
+
+/* =========================================================
+   7. SCROLLBAR AYARLARI
+   ========================================================= */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #131625;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #34d399, #059669);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #6ee7b7, #10b981);
+}
+
+/* =========================================================
+   8. MODAL (GİRİŞ EKRANI)
+   ========================================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: rgba(26, 29, 46, 0.9);
+    padding: 30px;
+    border-radius: 12px;
+    width: 350px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #94a3b8;
+}
+
+.close-btn:hover {
+    color: white;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    color: #94a3b8;
+}
+
+.form-group input {
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #2d3250;
+    background-color: #131625;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+}
+
+.form-group input:focus {
+    border-color: #10b981;
+}
+
+/* Ekran genişliği 768px ve daha küçük olduğunda (Telefonlar için) */
+@media (max-width: 768px) {
+
+    /* Yan yana duran ana kapsayıcıyı alt alta getirir */
+    .main-container,
+    .container,
+    .app-layout {
+        flex-direction: column !important;
+        padding: 10px !important;
+    }
+
+    /* Sol ve sağ kutuların genişliğini mobilde tam ekran yapar */
+    .sidebar,
+    .chat-section,
+    .products-section,
+    .hardware-list {
+        width: 100% !important;
+        margin-bottom: 20px;
+    }
+
+    /* Başlık yazı boyutunu mobilde biraz küçültür */
+    h1 {
+        font-size: 20px !important;
+        text-align: center;
+    }
+}
