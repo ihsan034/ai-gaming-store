@@ -1,41 +1,72 @@
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenAI } = require('@google/genai'); // Gemini SDK'sını dahil ediyoruz
+const { GoogleGenAI } = require('@google/genai');
 require('dotenv').config();
 
-// Sahte ürün veritabanımızı içeri aktarıyoruz
 const products = require('./products');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// API anahtarımızla Gemini istemcisini başlatıyoruz
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// 1. Test Rotası
+// --- Retry (Yeniden Deneme) Mekanizması ---
+// Gemini API çağrısını exponential backoff ile yeniden deneyen yardımcı fonksiyon.
+// 503 hatasında otomatik olarak tekrar dener, 429 gibi kota hatalarında denemez.
+async function callGeminiWithRetry(requestOptions, maxRetries = 3) {
+    const baseDelay = 2000; // İlk bekleme süresi: 2 saniye
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await ai.models.generateContent(requestOptions);
+            // Başarılı yanıt döndü
+            if (attempt > 0) {
+                console.log(`✅ Gemini API ${attempt + 1}. denemede başarılı oldu.`);
+            }
+            return response;
+        } catch (error) {
+            const isRetryable = error && error.status === 503;
+            const isLastAttempt = attempt === maxRetries;
+
+            // 503 dışındaki hatalar (429, 400 vb.) için retry yapma, hatayı direkt fırlat
+            if (!isRetryable) {
+                throw error;
+            }
+
+            // Son deneme de başarısız olduysa hatayı fırlat
+            if (isLastAttempt) {
+                console.error(`❌ Gemini API ${maxRetries + 1} deneme sonrasında da başarısız oldu (503). Vazgeçiliyor.`);
+                throw error;
+            }
+
+            // Exponential backoff: 2s, 4s, 8s
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.warn(`⚠️ Gemini API 503 hatası verdi. ${attempt + 1}/${maxRetries + 1}. deneme başarısız. ${delay / 1000} saniye sonra tekrar denenecek...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
 app.get('/', (req, res) => {
     res.send('AI-Powered PC Store Backend Çalışıyor!');
 });
 
-// Ürünleri Listeleme Rotası
 app.get('/api/products', (req, res) => {
     res.json(products);
 });
 
-// 2. Yapay Zeka ile Akıllı PC Toplama Rotası
 app.post('/api/recommend-pc', async (req, res) => {
     try {
-        const { userPrompt } = req.body; // Kullanıcının chat'e yazdığı mesaj (bütçe, oyun tercihi vb.)
+        const { userPrompt } = req.body;
 
         if (!userPrompt) {
             return res.status(400).json({ error: "Lütfen yapay zekaya bir mesaj gönderin." });
         }
 
-        // Yapay zekaya veritabanımızı ve uyması gereken kuralları sert bir dille anlatıyoruz (Prompt Engineering)
         const systemInstruction = `
         Sen bir bilgisayar donanımı uzmanısın ve bir e-ticaret sitesinin akıllı sistem toplama asistanısın.
         Görevin, kullanıcının isteklerine (bütçe, oyun/program tercihleri, özel istekler) en uygun bilgisayar sistemini oluşturmaktır.
@@ -59,20 +90,18 @@ app.post('/api/recommend-pc', async (req, res) => {
         }
         `;
 
-        // Gemini modelini çağırıyoruz
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash', // Hızlı ve kararlı çalışan güncel flash modeli
+        // Gemini API çağrısı - retry mekanizması ile
+        const response = await callGeminiWithRetry({
+            model: 'gemini-2.5-flash',
             contents: userPrompt,
             config: {
                 systemInstruction: systemInstruction,
-                responseMimeType: "application/json" // Çıktının kesinlikle JSON gelmesini sağlıyoruz
+                responseMimeType: "application/json"
             }
         });
 
-        // Gelen yanıtı alıp temizliyoruz
         let aiResponseText = response.text ? response.text.trim() : "";
         
-        // Markdown kod bloğu temizleme güvenlik önlemi
         if (aiResponseText.startsWith("```")) {
             aiResponseText = aiResponseText.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
         }
@@ -87,7 +116,6 @@ app.post('/api/recommend-pc', async (req, res) => {
             });
         }
 
-        // Gerekli alanların varlığı kontrolü
         if (!resultJson || typeof resultJson !== 'object') {
             return res.status(500).json({ error: "Yapay zekadan geçersiz yanıt formatı alındı." });
         }
@@ -102,7 +130,6 @@ app.post('/api/recommend-pc', async (req, res) => {
             ai_explanation = "Sisteminiz başarıyla oluşturuldu.";
         }
 
-        // Veritabanı ID ve Fiyat Doğrulama
         let validProductIds = [];
         let calculatedTotalPrice = 0;
         let categoriesFound = new Set();
@@ -118,12 +145,9 @@ app.post('/api/recommend-pc', async (req, res) => {
             }
         });
 
-        // Zorunlu bileşen kontrolünü kaldırdık, kullanıcının tekil parça alabilmesine olanak tanıyoruz.
-
-        // Frontend'e temiz ve doğrulanmış veriyi gönderiyoruz
         res.json({
             recommended_product_ids: validProductIds,
-            total_price: calculatedTotalPrice, // Yapay zekanın yanlış toplamını ezip gerçek veriyi yazıyoruz
+            total_price: calculatedTotalPrice,
             ai_explanation: ai_explanation
         });
 
@@ -138,7 +162,7 @@ app.post('/api/recommend-pc', async (req, res) => {
                 errorMessage = "Yapay zeka kullanım kotası sınırına ulaşıldı. Lütfen birkaç dakika sonra tekrar deneyin.";
                 statusCode = 429;
             } else if (error.status === 503) {
-                errorMessage = "Yapay zeka sunucuları şu anda aşırı yoğun. Lütfen 3-5 saniye bekleyip isteğinizi tekrar gönderin.";
+                errorMessage = "Yapay zeka sunucuları şu anda aşırı yoğun. Tüm yeniden deneme girişimleri başarısız oldu. Lütfen birkaç dakika sonra tekrar deneyin.";
                 statusCode = 503;
             } else if (error.status === 400) {
                 errorMessage = "Yapay zekaya gönderilen istek geçersiz veya çok uzun. Lütfen daha kısa ve net yazın.";
