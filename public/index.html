@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Powered PC Store</title>
     <link rel="icon" type="image/png" href="logo.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -20,8 +19,7 @@
 
             <div class="nav-right">
                 <div id="authArea">
-                    <span id="welcomeMsg" style="display: none;">Hoş geldin, <strong
-                            id="loggedInUser"></strong></span>
+                    <span id="welcomeMsg" style="display: none;">Hoş geldin, <strong id="loggedInUser"></strong></span>
                     <button id="loginBtn" class="nav-btn">Giriş Yap</button>
                 </div>
                 <button id="ordersBtn" class="cart-icon" style="cursor: pointer; display: none;">
@@ -66,8 +64,7 @@
         <div class="modal-content">
             <span id="closeModal" class="close-btn">&times;</span>
             <h2 style="border-bottom:none; color: white;">Kullanıcı Girişi</h2>
-            
-            <!-- Custom Notification Message -->
+
             <div id="authMessage" style="display: none; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; text-align: center; font-weight: 500; transition: all 0.3s ease;"></div>
 
             <div class="form-group" id="nameGroup" style="display: none;">
@@ -98,12 +95,11 @@
             <span id="closeOrdersModal" class="close-btn">&times;</span>
             <h2 style="border-bottom:none; color: white;">📦 Sipariş Geçmişim</h2>
             <div id="ordersList" style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px;">
-                <!-- Siparişler buraya dinamik olarak eklenecek -->
             </div>
         </div>
     </div>
 
-    <script media="src" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 
 </html>

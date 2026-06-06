@@ -63,7 +63,9 @@ async function handleSend() {
         // AI mesajındaki markdown (**) işaretlerini temizleyip ekrana bas
         const cleanedText = data.ai_explanation.replace(/\*\*/g, '');
         appendMessage(cleanedText, 'ai-message');
-        renderProducts(data.recommended_product_ids, data.total_price);
+
+        // Gerçek fiyatları da renderProducts'a gönder
+        renderProducts(data.recommended_product_ids, data.total_price, data.price_overrides || {});
 
     } catch (error) {
         console.error("Hata:", error);
@@ -75,27 +77,24 @@ async function handleSend() {
 // --- MESAJ BALONU OLUŞTURMA ---
 function appendMessage(text, className) {
     const msgDiv = document.createElement('div');
-    // Date.now() yanına rastgele sayı ekleyerek ID'lerin çakışmasını (silinme hatasını) önlüyoruz
     const id = 'msg-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
     msgDiv.id = id;
     msgDiv.className = `message ${className}`;
     msgDiv.innerText = text;
     chatBox.appendChild(msgDiv);
-    chatBox.scrollTop = chatBox.scrollHeight; // Ekranı otomatik aşağı kaydır
+    chatBox.scrollTop = chatBox.scrollHeight;
     return id;
 }
 
 // --- ÖNERİLEN ÜRÜNLERİ DİNAMİK OLARAK BASMA ---
-function renderProducts(productIds, totalPrice) {
+// priceOverrides: { productId: gercekFiyat } — gerçek piyasa fiyatları
+function renderProducts(productIds, totalPrice, priceOverrides = {}) {
     productsGrid.innerHTML = '';
 
-    // Önerilen ürünlerin kategorilerini toplayıp tam bir sistem olup olmadığını kontrol edelim
     const categories = new Set();
     productIds.forEach(id => {
         const product = allProducts.find(p => p.id === id);
-        if (product) {
-            categories.add(product.category);
-        }
+        if (product) categories.add(product.category);
     });
 
     const hasCPU = [...categories].some(c => c.includes("İşlemci") || c.includes("CPU"));
@@ -118,6 +117,9 @@ function renderProducts(productIds, totalPrice) {
     productIds.forEach(id => {
         const product = allProducts.find(p => p.id === id);
         if (product) {
+            // Gerçek piyasa fiyatı varsa onu kullan, yoksa veritabanı fiyatını kullan
+            const displayPrice = priceOverrides[id] || product.price;
+
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
@@ -127,7 +129,7 @@ function renderProducts(productIds, totalPrice) {
                     <div class="product-brand">${product.brand}</div>
                 </div>
                 <div>
-                    <div class="product-price">${product.price.toLocaleString('tr-TR')} TL</div>
+                    <div class="product-price">${displayPrice.toLocaleString('tr-TR')} TL</div>
                     <button class="buy-btn" data-id="${product.id}">Sepete Ekle</button>
                 </div>
             `;
@@ -136,7 +138,7 @@ function renderProducts(productIds, totalPrice) {
     });
 }
 
-// --- EVENT LISTENERS (TETİKLEYİCİLER) ---
+// --- EVENT LISTENERS ---
 sendBtn.addEventListener('click', handleSend);
 userInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') handleSend();
@@ -177,14 +179,13 @@ function updateAuthUI() {
     const ordersBtn = document.getElementById('ordersBtn');
     if (currentUser) {
         loginBtn.innerText = "Çıkış Yap";
-        loginBtn.style.backgroundColor = "#ef4444"; // Kırmızı
+        loginBtn.style.backgroundColor = "#ef4444";
         welcomeMsg.style.display = "inline";
-        // Kullanıcı ismi varsa ismi, yoksa emailin @ öncesini göster
         loggedInUserSpan.innerText = currentUser.name || currentUser.email.split('@')[0];
         if (ordersBtn) ordersBtn.style.display = "inline-block";
     } else {
         loginBtn.innerText = "Giriş Yap";
-        loginBtn.style.backgroundColor = "#3b82f6"; // Mavi
+        loginBtn.style.backgroundColor = "#3b82f6";
         welcomeMsg.style.display = "none";
         if (ordersBtn) ordersBtn.style.display = "none";
     }
@@ -221,10 +222,9 @@ let authMode = 'login';
 function toggleAuth() {
     const modalTitle = loginModal.querySelector('h2');
     const authToggleText = document.getElementById('authToggleText');
-    
-    // Form girdilerini temizle
+
     clearAuthMessage();
-    
+
     if (authMode === 'login') {
         authMode = 'signup';
         if (modalTitle) modalTitle.innerText = "Kayıt Ol";
@@ -248,7 +248,7 @@ function toggleAuth() {
     }
 }
 
-// Modal içi tıklamalar ve toggle linki için delegasyon
+// Modal içi tıklamalar için delegasyon
 loginModal.addEventListener('click', (e) => {
     if (e.target && e.target.id === 'toggleAuthBtn') {
         e.preventDefault();
@@ -258,11 +258,11 @@ loginModal.addEventListener('click', (e) => {
 
 loginBtn.addEventListener('click', () => {
     if (!currentUser) {
-        authMode = 'signup'; // toggleAuth() çağrıldığında 'login' moduna sıfırlasın
+        authMode = 'signup';
         toggleAuth();
-        loginModal.style.display = 'flex'; // Ekranı göster
+        loginModal.style.display = 'flex';
     } else {
-        localStorage.removeItem('user'); // Çıkış yap
+        localStorage.removeItem('user');
         localStorage.removeItem('cart');
         currentUser = null;
         cart = [];
@@ -287,50 +287,25 @@ submitLoginBtn.addEventListener('click', () => {
     clearAuthMessage();
 
     if (authMode === 'signup') {
-        // Kayıt Ol Modu
         const name = nameInput.value.trim();
         const confirmPass = confirmPasswordInput.value.trim();
 
-        if (!name || !email || !pass || !confirmPass) {
-            showAuthMessage("Lütfen tüm alanları doldurun!");
-            return;
-        }
-
-        if (name.length < 3) {
-            showAuthMessage("Ad Soyad en az 3 karakter olmalıdır!");
-            return;
-        }
-
-        if (!email.includes('@')) {
-            showAuthMessage("Lütfen geçerli bir e-posta adresi girin!");
-            return;
-        }
-
-        if (pass.length < 6) {
-            showAuthMessage("Şifreniz en az 6 karakter olmalıdır!");
-            return;
-        }
-
-        if (pass !== confirmPass) {
-            showAuthMessage("Şifreler uyuşmuyor!");
-            return;
-        }
+        if (!name || !email || !pass || !confirmPass) { showAuthMessage("Lütfen tüm alanları doldurun!"); return; }
+        if (name.length < 3) { showAuthMessage("Ad Soyad en az 3 karakter olmalıdır!"); return; }
+        if (!email.includes('@')) { showAuthMessage("Lütfen geçerli bir e-posta adresi girin!"); return; }
+        if (pass.length < 6) { showAuthMessage("Şifreniz en az 6 karakter olmalıdır!"); return; }
+        if (pass !== confirmPass) { showAuthMessage("Şifreler uyuşmuyor!"); return; }
 
         const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
         const userExists = registeredUsers.some(user => user.email.toLowerCase() === email.toLowerCase());
-        
-        if (userExists) {
-            showAuthMessage("Bu e-posta adresi zaten kayıtlı!");
-            return;
-        }
 
-        // Kullanıcıyı kaydet
-        registeredUsers.push({ name: name, email: email, password: pass });
+        if (userExists) { showAuthMessage("Bu e-posta adresi zaten kayıtlı!"); return; }
+
+        registeredUsers.push({ name, email, password: pass });
         localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-        
+
         showAuthMessage("Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...", "success");
-        
-        // 1.5 saniye sonra Giriş Yap moduna geç
+
         setTimeout(() => {
             toggleAuth();
             emailInput.value = email;
@@ -340,20 +315,17 @@ submitLoginBtn.addEventListener('click', () => {
         }, 1500);
 
     } else {
-        // Giriş Yap Modu
-        if (!email || !pass) {
-            showAuthMessage("Lütfen e-posta ve şifrenizi girin!");
-            return;
-        }
+        if (!email || !pass) { showAuthMessage("Lütfen e-posta ve şifrenizi girin!"); return; }
 
         const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-        const user = registeredUsers.find(user => user.email.toLowerCase() === email.toLowerCase() && user.password === pass);
-        
+        const user = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
+
         if (user) {
             currentUser = { email: user.email, name: user.name };
-            localStorage.setItem('user', JSON.stringify(currentUser)); // Tarayıcıya kaydet
+            localStorage.setItem('user', JSON.stringify(currentUser));
             loginModal.style.display = 'none';
-            emailInput.value = ''; passwordInput.value = '';
+            emailInput.value = '';
+            passwordInput.value = '';
             updateAuthUI();
         } else {
             showAuthMessage("E-posta veya şifre hatalı!");
@@ -365,19 +337,17 @@ submitLoginBtn.addEventListener('click', () => {
 productsGrid.addEventListener('click', (e) => {
     if (e.target.classList.contains('buy-btn')) {
         if (!currentUser) {
-            loginModal.style.display = 'flex'; // Giriş yapmamışsa ekranı aç
+            loginModal.style.display = 'flex';
             return;
         }
 
-        // Tıklanan ürünün ID'sini al ve havuzdan bul
         const productId = parseInt(e.target.getAttribute('data-id'));
         const product = allProducts.find(p => p.id === productId);
 
-        cart.push(product); // Sepete ekle
-        localStorage.setItem('cart', JSON.stringify(cart)); // Hafızayı güncelle
+        cart.push(product);
+        localStorage.setItem('cart', JSON.stringify(cart));
         updateAuthUI();
 
-        // Animasyon
         const originalText = e.target.innerText;
         e.target.innerText = "✓ Eklendi";
         e.target.style.backgroundColor = "#10b981";
@@ -418,23 +388,16 @@ if (closeOrdersModal) {
     });
 }
 
-// Ortak modal kapama (dış boşluğa tıklama)
 window.addEventListener('click', (e) => {
-    if (e.target === ordersModal) {
-        ordersModal.style.display = 'none';
-    }
-    if (e.target === loginModal) {
-        loginModal.style.display = 'none';
-    }
+    if (e.target === ordersModal) ordersModal.style.display = 'none';
+    if (e.target === loginModal) loginModal.style.display = 'none';
 });
 
 function renderOrders() {
     if (!ordersList || !currentUser) return;
-    
+
     ordersList.innerHTML = '';
     const orders = JSON.parse(localStorage.getItem('orders')) || [];
-    
-    // Aktif kullanıcının siparişlerini filtrele
     const userOrders = orders.filter(o => o.userEmail === currentUser.email);
 
     if (userOrders.length === 0) {
@@ -442,11 +405,10 @@ function renderOrders() {
         return;
     }
 
-    // Siparişleri son verilenden ilk verilene doğru listele
     userOrders.reverse().forEach(order => {
         const orderBox = document.createElement('div');
         orderBox.style.cssText = 'background-color: rgba(35, 40, 64, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); padding: 15px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);';
-        
+
         const itemsHtml = order.items.map(item => `
             <div style="display: flex; justify-content: space-between; margin-bottom: 5px; color: #cbd5e1;">
                 <span>• ${item.brand} ${item.model}</span>
@@ -459,9 +421,7 @@ function renderOrders() {
                 <span>Sipariş No: ${order.id}</span>
                 <span style="color: #94a3b8; font-weight: normal;">${order.date} ${order.time}</span>
             </div>
-            <div style="margin-bottom: 10px;">
-                ${itemsHtml}
-            </div>
+            <div style="margin-bottom: 10px;">${itemsHtml}</div>
             <div style="border-top: 1px dashed rgba(255, 255, 255, 0.08); padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-end;">
                 <div style="max-width: 65%; text-align: left; font-size: 0.8rem; color: #94a3b8; line-height: 1.4;">
                     <div><strong>Tel:</strong> ${order.phone}</div>

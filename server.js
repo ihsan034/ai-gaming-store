@@ -1,41 +1,103 @@
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenAI } = require('@google/genai'); // Gemini SDK'sını dahil ediyoruz
+const { GoogleGenAI } = require('@google/genai');
 require('dotenv').config();
 
-// Sahte ürün veritabanımızı içeri aktarıyoruz
 const products = require('./products');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// API anahtarımızla Gemini istemcisini başlatıyoruz
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// 1. Test Rotası
-app.get('/', (req, res) => {
-    res.send('AI-Powered PC Store Backend Çalışıyor!');
-});
+// ============================================================
+// RETRY MEKANİZMASI
+// ============================================================
+async function callGeminiWithRetry(requestOptions, maxRetries = 3) {
+    const baseDelay = 2000;
 
-// Ürünleri Listeleme Rotası
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await ai.models.generateContent(requestOptions);
+            if (attempt > 0) console.log(`✅ Gemini ${attempt + 1}. denemede başarılı.`);
+            return response;
+        } catch (error) {
+            const isRetryable = error && error.status === 503;
+            const isLastAttempt = attempt === maxRetries;
+
+            if (!isRetryable) throw error;
+            if (isLastAttempt) {
+                console.error(`❌ Gemini ${maxRetries + 1} deneme sonrasında başarısız.`);
+                throw error;
+            }
+
+            const delay = baseDelay * Math.pow(2, attempt);
+            console.warn(`⚠️ 503 hatası. ${delay / 1000}s sonra tekrar denenecek...`);
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+}
+
+// ============================================================
+// SADECE ÖNERİLEN ÜRÜNLERİN GERÇEK FİYATINI ÇEKEN FONKSİYON
+// ============================================================
+async function fetchRealPricesForProducts(selectedProducts) {
+    const productList = selectedProducts
+        .map(p => `ID${p.id}: ${p.brand} ${p.model}`)
+        .join('\n');
+
+    console.log(`🔍 ${selectedProducts.length} ürün için gerçek fiyat aranıyor...`);
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Türkiye e-ticaret sitelerinde (Hepsiburada, Trendyol, İtopya) şu PC bileşenlerinin güncel ortalama fiyatlarını ara:
+
+${productList}
+
+Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
+{"ID1": 4200, "ID11": 9500}`,
+            config: {
+                tools: [{ googleSearch: {} }]
+            }
+        });
+
+        const text = response.text || "";
+        const jsonMatch = text.match(/\{[^{}]+\}/);
+
+        if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            console.log("✅ Gerçek fiyatlar alındı:", parsed);
+            return parsed;
+        }
+    } catch (err) {
+        console.warn("⚠️ Gerçek fiyat alınamadı, veritabanı fiyatları kullanılıyor:", err.message);
+    }
+
+    return {};
+}
+
+// ============================================================
+// ROTALAR
+// ============================================================
+
+app.get('/', (req, res) => res.send('AI-Powered PC Store Backend Çalışıyor!'));
+
 app.get('/api/products', (req, res) => {
     res.json(products);
 });
 
-// 2. Yapay Zeka ile Akıllı PC Toplama Rotası
 app.post('/api/recommend-pc', async (req, res) => {
     try {
-        const { userPrompt } = req.body; // Kullanıcının chat'e yazdığı mesaj (bütçe, oyun tercihi vb.)
+        const { userPrompt } = req.body;
 
         if (!userPrompt) {
             return res.status(400).json({ error: "Lütfen yapay zekaya bir mesaj gönderin." });
         }
 
-        // Yapay zekaya veritabanımızı ve uyması gereken kuralları sert bir dille anlatıyoruz (Prompt Engineering)
         const systemInstruction = `
         Sen bir bilgisayar donanımı uzmanısın ve bir e-ticaret sitesinin akıllı sistem toplama asistanısın.
         Görevin, kullanıcının isteklerine (bütçe, oyun/program tercihleri, özel istekler) en uygun bilgisayar sistemini oluşturmaktır.
@@ -45,34 +107,29 @@ app.post('/api/recommend-pc', async (req, res) => {
         
         UYULMASI ZORUNLU KURALLAR:
         1. Toplam sistem fiyatı kullanıcının belirttiği bütçeyi kesinlikle AŞMAMALIDIR.
-        2. Seçtiğin parçalar birbiriyle uyumlu olmalıdır (Örn: AM4 işlemci seçtiysen AM4 anakart ve DDR4 RAM seçmelisiniz. AM5 seçtiysen AM5 anakart ve DDR5 RAM seçmelisin).
-        3. Kullanıcı komple bir bilgisayar toplamak istiyorsa sistemde mutlaka en az 1 adet CPU, 1 adet GPU, 1 adet Motherboard, 1 adet RAM, 1 adet Power (PSU), 1 adet SSD ve 1 adet Case bulunmalıdır. Ancak kullanıcı sadece belirli bir parça veya grup istiyorsa (Örn: "sadece ekran kartı göster", "SSD öner"), sadece kullanıcının istediği parça kategorilerini listelemelisin.
-        4. Kullanıcının oyunlarda termal throttling (aşırı ısınma) yaşama endişesi varsa veya iyi soğutma istiyorsa bunu açıklama kısmında tatlı dille belirt.
+        2. Seçtiğin parçalar birbiriyle uyumlu olmalıdır (AM4↔AM4↔DDR4, AM5↔AM5↔DDR5, LGA1700↔LGA1700).
+        3. Kullanıcı komple bir bilgisayar toplamak istiyorsa sistemde mutlaka en az 1 adet CPU, 1 adet GPU, 1 adet Motherboard, 1 adet RAM, 1 adet Power (PSU), 1 adet SSD ve 1 adet Case bulunmalıdır.
+        4. Kullanıcı sadece belirli bir parça istiyorsa (Örn: "sadece ekran kartı göster") sadece o kategorileri listele.
+        5. Isınma endişesi varsa açıklamada belirt.
         
-        YANIT FORMATI:
-        Yanıtı KESİNLİKLE sadece ve sadece aşağıdaki JSON formatında dönmelisin. Markdown etiketleri (\`\`\`json vb.) içermesin. Direkt süslü parantezle başlasın ve bitsin.
-        
+        YANIT FORMATI (sadece JSON, markdown yok):
         {
           "recommended_product_ids": [1, 11, 22, 32, 41, 51, 56],
           "total_price": 22400,
-          "ai_explanation": "Kullanıcıya sistemin neden seçildiğini, performansını ve uyumluluğunu açıklayan kısa ve profesyonel bir Türkçe mesaj."
-        }
-        `;
+          "ai_explanation": "Kullanıcıya sistemin neden seçildiğini açıklayan kısa ve profesyonel bir Türkçe mesaj."
+        }`;
 
-        // Gemini modelini çağırıyoruz
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash', // Hızlı ve kararlı çalışan güncel flash modeli
+        // 1. AŞAMA: Gemini'den ürün önerisi al
+        const response = await callGeminiWithRetry({
+            model: 'gemini-2.5-flash',
             contents: userPrompt,
             config: {
-                systemInstruction: systemInstruction,
-                responseMimeType: "application/json" // Çıktının kesinlikle JSON gelmesini sağlıyoruz
+                systemInstruction,
+                responseMimeType: "application/json"
             }
         });
 
-        // Gelen yanıtı alıp temizliyoruz
-        let aiResponseText = response.text ? response.text.trim() : "";
-        
-        // Markdown kod bloğu temizleme güvenlik önlemi
+        let aiResponseText = response.text?.trim() || "";
         if (aiResponseText.startsWith("```")) {
             aiResponseText = aiResponseText.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
         }
@@ -81,69 +138,65 @@ app.post('/api/recommend-pc', async (req, res) => {
         try {
             resultJson = JSON.parse(aiResponseText);
         } catch (parseError) {
-            console.error("JSON Parse Hatası:", parseError, "Gelen Ham Metin:", aiResponseText);
-            return res.status(500).json({ 
-                error: "Yapay zeka geçersiz bir JSON formatı döndü. Lütfen tekrar deneyin." 
-            });
+            console.error("JSON Parse Hatası:", parseError, "Ham metin:", aiResponseText);
+            return res.status(500).json({ error: "Yapay zeka geçersiz JSON döndü. Lütfen tekrar deneyin." });
         }
 
-        // Gerekli alanların varlığı kontrolü
         if (!resultJson || typeof resultJson !== 'object') {
-            return res.status(500).json({ error: "Yapay zekadan geçersiz yanıt formatı alındı." });
+            return res.status(500).json({ error: "Geçersiz yanıt formatı alındı." });
         }
 
-        let { recommended_product_ids, total_price, ai_explanation } = resultJson;
+        let { recommended_product_ids, ai_explanation } = resultJson;
+        if (!Array.isArray(recommended_product_ids)) recommended_product_ids = [];
+        if (!ai_explanation) ai_explanation = "Sisteminiz başarıyla oluşturuldu.";
 
-        if (!Array.isArray(recommended_product_ids)) {
-            recommended_product_ids = [];
-        }
-
-        if (!ai_explanation || typeof ai_explanation !== 'string') {
-            ai_explanation = "Sisteminiz başarıyla oluşturuldu.";
-        }
-
-        // Veritabanı ID ve Fiyat Doğrulama
-        let validProductIds = [];
-        let calculatedTotalPrice = 0;
-        let categoriesFound = new Set();
-
+        // Ürün ID'lerini veritabanına göre doğrula
+        const validProductIds = [];
         recommended_product_ids.forEach(id => {
             const product = products.find(p => p.id === Number(id));
             if (product) {
                 validProductIds.push(product.id);
-                calculatedTotalPrice += product.price;
-                categoriesFound.add(product.category);
             } else {
-                console.warn(`Veritabanında bulunmayan ürün ID'si yapay zeka tarafından önerildi: ${id}`);
+                console.warn(`⚠️ Geçersiz ürün ID'si önerildi: ${id}`);
             }
         });
 
-        // Zorunlu bileşen kontrolünü kaldırdık, kullanıcının tekil parça alabilmesine olanak tanıyoruz.
+        // 2. AŞAMA: Sadece önerilen ürünler için gerçek fiyat ara
+        const selectedProducts = validProductIds.map(id => products.find(p => p.id === id));
+        const realPrices = await fetchRealPricesForProducts(selectedProducts);
 
-        // Frontend'e temiz ve doğrulanmış veriyi gönderiyoruz
+        // Gerçek fiyatlarla toplam fiyatı ve override map'i oluştur
+        let calculatedTotalPrice = 0;
+        const priceOverrides = {};
+
+        selectedProducts.forEach(p => {
+            const realPrice = realPrices[`ID${p.id}`] || p.price;
+            calculatedTotalPrice += realPrice;
+            priceOverrides[p.id] = realPrice;
+        });
+
         res.json({
             recommended_product_ids: validProductIds,
-            total_price: calculatedTotalPrice, // Yapay zekanın yanlış toplamını ezip gerçek veriyi yazıyoruz
-            ai_explanation: ai_explanation
+            total_price: calculatedTotalPrice,
+            ai_explanation,
+            price_overrides: priceOverrides
         });
 
     } catch (error) {
         console.error("AI Hatası:", error);
-        
-        let errorMessage = "Yapay zeka yanıt oluştururken beklenmedik bir hata meydana geldi. Lütfen tekrar deneyin.";
+
+        let errorMessage = "Yapay zeka yanıt oluştururken beklenmedik bir hata oluştu. Lütfen tekrar deneyin.";
         let statusCode = 500;
 
-        if (error && error.status) {
-            if (error.status === 429) {
-                errorMessage = "Yapay zeka kullanım kotası sınırına ulaşıldı. Lütfen birkaç dakika sonra tekrar deneyin.";
-                statusCode = 429;
-            } else if (error.status === 503) {
-                errorMessage = "Yapay zeka sunucuları şu anda aşırı yoğun. Lütfen 3-5 saniye bekleyip isteğinizi tekrar gönderin.";
-                statusCode = 503;
-            } else if (error.status === 400) {
-                errorMessage = "Yapay zekaya gönderilen istek geçersiz veya çok uzun. Lütfen daha kısa ve net yazın.";
-                statusCode = 400;
-            }
+        if (error?.status === 429) {
+            errorMessage = "Yapay zeka kullanım kotası sınırına ulaşıldı. Lütfen birkaç dakika sonra tekrar deneyin.";
+            statusCode = 429;
+        } else if (error?.status === 503) {
+            errorMessage = "Yapay zeka sunucuları şu anda aşırı yoğun. Tüm yeniden deneme girişimleri başarısız oldu.";
+            statusCode = 503;
+        } else if (error?.status === 400) {
+            errorMessage = "Yapay zekaya gönderilen istek geçersiz veya çok uzun. Lütfen daha kısa ve net yazın.";
+            statusCode = 400;
         }
 
         res.status(statusCode).json({ error: errorMessage });
@@ -151,5 +204,5 @@ app.post('/api/recommend-pc', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Sunucu ${PORT} portunda başarıyla başlatıldı.`);
+    console.log(`✅ Sunucu ${PORT} portunda başarıyla başlatıldı.`);
 });
