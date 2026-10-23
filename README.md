@@ -11,7 +11,7 @@ Türkiye pazarına özel, yapay zeka destekli PC bileşeni öneri platformu. Kul
 
 ## 🛠️ Kullanılan Teknolojiler
 
-**Backend:** Node.js, Express.js
+**Backend:** Node.js, Express.js, TypeScript
 **Frontend:** Vanilla HTML, CSS, JavaScript
 **AI/Veri:** Google Gemini 2.5 Flash API, Google Search Grounding
 **Deployment:** Render.com
@@ -30,10 +30,32 @@ npm install
 GEMINI_API_KEY=your_api_key_here
 ```
 
-Sunucuyu başlatın:
+Geliştirme modunda başlatın (dosya kaydedilince sunucu yeniden başlar):
 
 ```bash
+npm run dev
+```
+
+Derleyip çalıştırmak için:
+
+```bash
+npm run build
 npm start
+```
+
+Sadece tip kontrolü için `npm run typecheck` kullanılabilir. Uygulama `http://localhost:5000` adresinde açılır.
+
+> **Deployment notu:** Backend TypeScript ile yazıldığı için sunucuda derleme gerekir. Render'da Build Command `npm install && npm run build`, Start Command `npm start` olmalıdır.
+
+## 🗂️ Proje Yapısı
+
+```
+src/
+  server.ts     Express sunucusu ve API rotaları
+  products.ts   Ürün kataloğu
+  types.ts      Ortak tipler (Product, istek/yanıt tipleri)
+public/         Arayüz (HTML, CSS, JavaScript)
+dist/           Derlenmiş çıktı (npm run build ile oluşur, Git'e eklenmez)
 ```
 
 ## 🧩 Nasıl Çalışıyor?

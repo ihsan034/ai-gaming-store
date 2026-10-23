@@ -1,4 +1,6 @@
-const products = [
+import type { Product } from './types';
+
+export const products: Product[] = [
     // --- İŞLEMCİLER (CPU) - 10 ADET ---
     { id: 1, category: "CPU", brand: "AMD", model: "Ryzen 5 5600", price: 4200, stock: 15, specs: { socket: "AM4", ram_type: "DDR4", power: "65W" } },
     { id: 2, category: "CPU", brand: "Intel", model: "Core i5-12400F", price: 3900, stock: 12, specs: { socket: "LGA1700", ram_type: "DDR4", power: "65W" } },
@@ -73,5 +75,3 @@ const products = [
     { id: 59, category: "Case", brand: "Asus", model: "TUF Gaming GT301 ARGB Mesh", price: 3800, stock: 10, specs: { form_factor: "ATX Mid Tower", fans: "4x120mm ARGB" } },
     { id: 60, category: "Case", brand: "Lian Li", model: "Lancool III RGB Black", price: 5900, stock: 5, specs: { form_factor: "ATX Mid Tower", fans: "4x140mm ARGB" } }
 ];
-
-module.exports = products;

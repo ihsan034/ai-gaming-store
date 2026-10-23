@@ -1,31 +1,59 @@
-const express = require('express');
-const cors = require('cors');
-const { GoogleGenAI } = require('@google/genai');
-require('dotenv').config();
+import 'dotenv/config';
+import path from 'node:path';
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import { GoogleGenAI, GenerateContentParameters, GenerateContentResponse } from '@google/genai';
 
-const products = require('./products');
+import { products } from './products';
+import type {
+    Product,
+    LivePrices,
+    RecommendRequest,
+    RecommendResponse,
+    ErrorResponse,
+    AiRecommendation
+} from './types';
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+    console.error("❌ GEMINI_API_KEY tanımlı değil. .env dosyasına ekleyin.");
+    process.exit(1);
+}
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const PORT = Number(process.env.PORT) || 5000;
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+// src/ (tsx) ve dist/ (derlenmiş) klasörlerinden aynı public/ klasörünü bul
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Hata nesnesinden HTTP durum kodunu güvenli şekilde oku (Gemini SDK hataları .status taşır)
+function getErrorStatus(error: unknown): number | undefined {
+    if (typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number') {
+        return error.status;
+    }
+    return undefined;
+}
+
+function getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
 
 // ============================================================
 // RETRY MEKANİZMASI
 // ============================================================
-async function callGeminiWithRetry(requestOptions, maxRetries = 3) {
+async function callGeminiWithRetry(requestOptions: GenerateContentParameters, maxRetries = 3): Promise<GenerateContentResponse> {
     const baseDelay = 2000;
 
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    for (let attempt = 0; ; attempt++) {
         try {
             const response = await ai.models.generateContent(requestOptions);
             if (attempt > 0) console.log(`✅ Gemini ${attempt + 1}. denemede başarılı.`);
             return response;
         } catch (error) {
-            const isRetryable = error && error.status === 503;
+            const isRetryable = getErrorStatus(error) === 503;
             const isLastAttempt = attempt === maxRetries;
 
             if (!isRetryable) throw error;
@@ -44,7 +72,7 @@ async function callGeminiWithRetry(requestOptions, maxRetries = 3) {
 // ============================================================
 // SADECE ÖNERİLEN ÜRÜNLERİN GERÇEK FİYATINI ÇEKEN FONKSİYON
 // ============================================================
-async function fetchRealPricesForProducts(selectedProducts) {
+async function fetchRealPricesForProducts(selectedProducts: Product[]): Promise<LivePrices> {
     if (selectedProducts.length === 0) return {};
 
     const productList = selectedProducts
@@ -71,11 +99,11 @@ Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
         const jsonMatch = text.match(/\{[^{}]+\}/);
 
         if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
+            const parsed: Record<string, unknown> = JSON.parse(jsonMatch[0]);
 
             // Sadece seçilen ürünlere ait, pozitif sayı olan fiyatları kabul et
             // ("4.200 TL" gibi metinler veya 0/negatif değerler katalog fiyatına düşer)
-            const prices = {};
+            const prices: LivePrices = {};
             selectedProducts.forEach(p => {
                 const value = Number(parsed[`ID${p.id}`]);
                 if (Number.isFinite(value) && value > 0) prices[`ID${p.id}`] = Math.round(value);
@@ -85,7 +113,7 @@ Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
             return prices;
         }
     } catch (err) {
-        console.warn("⚠️ Gerçek fiyat alınamadı, veritabanı fiyatları kullanılıyor:", err.message);
+        console.warn("⚠️ Gerçek fiyat alınamadı, veritabanı fiyatları kullanılıyor:", getErrorMessage(err));
     }
 
     return {};
@@ -95,15 +123,20 @@ Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
 // ROTALAR
 // ============================================================
 
-app.get('/', (req, res) => res.send('AI-Powered PC Store Backend Çalışıyor!'));
+app.get('/', (req: Request, res: Response) => {
+    res.send('AI-Powered PC Store Backend Çalışıyor!');
+});
 
-app.get('/api/products', (req, res) => {
+app.get('/api/products', (req: Request, res: Response<Product[]>) => {
     res.json(products);
 });
 
-app.post('/api/recommend-pc', async (req, res) => {
+app.post('/api/recommend-pc', async (
+    req: Request<{}, RecommendResponse | ErrorResponse, RecommendRequest>,
+    res: Response<RecommendResponse | ErrorResponse>
+) => {
     try {
-        const { userPrompt } = req.body;
+        const { userPrompt } = req.body ?? {};
 
         if (!userPrompt) {
             return res.status(400).json({ error: "Lütfen yapay zekaya bir mesaj gönderin." });
@@ -112,17 +145,17 @@ app.post('/api/recommend-pc', async (req, res) => {
         const systemInstruction = `
         Sen bir bilgisayar donanımı uzmanısın ve bir e-ticaret sitesinin akıllı sistem toplama asistanısın.
         Görevin, kullanıcının isteklerine (bütçe, oyun/program tercihleri, özel istekler) en uygun bilgisayar sistemini oluşturmaktır.
-        
+
         AŞAĞIDAKİ ÜRÜN HAVUZUNU KULLANMAK ZORUNDASIN. Havuzda olmayan hiçbir ürünü listeye ekleme:
         ${JSON.stringify(products, null, 2)}
-        
+
         UYULMASI ZORUNLU KURALLAR:
         1. Toplam sistem fiyatı kullanıcının belirttiği bütçeyi kesinlikle AŞMAMALIDIR.
         2. Seçtiğin parçalar birbiriyle uyumlu olmalıdır (AM4↔AM4↔DDR4, AM5↔AM5↔DDR5, LGA1700↔LGA1700).
         3. Kullanıcı komple bir bilgisayar toplamak istiyorsa sistemde mutlaka en az 1 adet CPU, 1 adet GPU, 1 adet Motherboard, 1 adet RAM, 1 adet Power (PSU), 1 adet SSD ve 1 adet Case bulunmalıdır.
         4. Kullanıcı sadece belirli bir parça istiyorsa (Örn: "sadece ekran kartı göster") sadece o kategorileri listele.
         5. Isınma endişesi varsa açıklamada belirt.
-        
+
         YANIT FORMATI (sadece JSON, markdown yok):
         {
           "recommended_product_ids": [1, 11, 22, 32, 41, 51, 56],
@@ -145,7 +178,7 @@ app.post('/api/recommend-pc', async (req, res) => {
             aiResponseText = aiResponseText.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
         }
 
-        let resultJson;
+        let resultJson: AiRecommendation;
         try {
             resultJson = JSON.parse(aiResponseText);
         } catch (parseError) {
@@ -157,28 +190,30 @@ app.post('/api/recommend-pc', async (req, res) => {
             return res.status(500).json({ error: "Geçersiz yanıt formatı alındı." });
         }
 
-        let { recommended_product_ids, ai_explanation } = resultJson;
-        if (!Array.isArray(recommended_product_ids)) recommended_product_ids = [];
-        if (!ai_explanation) ai_explanation = "Sisteminiz başarıyla oluşturuldu.";
+        const recommendedIds: unknown[] = Array.isArray(resultJson.recommended_product_ids)
+            ? resultJson.recommended_product_ids
+            : [];
+        const aiExplanation = typeof resultJson.ai_explanation === 'string' && resultJson.ai_explanation
+            ? resultJson.ai_explanation
+            : "Sisteminiz başarıyla oluşturuldu.";
 
         // Ürün ID'lerini veritabanına göre doğrula
-        const validProductIds = [];
-        recommended_product_ids.forEach(id => {
+        const selectedProducts: Product[] = [];
+        recommendedIds.forEach(id => {
             const product = products.find(p => p.id === Number(id));
             if (product) {
-                validProductIds.push(product.id);
+                selectedProducts.push(product);
             } else {
                 console.warn(`⚠️ Geçersiz ürün ID'si önerildi: ${id}`);
             }
         });
 
         // 2. AŞAMA: Sadece önerilen ürünler için gerçek fiyat ara
-        const selectedProducts = validProductIds.map(id => products.find(p => p.id === id));
         const realPrices = await fetchRealPricesForProducts(selectedProducts);
 
         // Gerçek fiyatlarla toplam fiyatı ve override map'i oluştur
         let calculatedTotalPrice = 0;
-        const priceOverrides = {};
+        const priceOverrides: Record<number, number> = {};
 
         selectedProducts.forEach(p => {
             const realPrice = realPrices[`ID${p.id}`] || p.price;
@@ -186,10 +221,10 @@ app.post('/api/recommend-pc', async (req, res) => {
             priceOverrides[p.id] = realPrice;
         });
 
-        res.json({
-            recommended_product_ids: validProductIds,
+        return res.json({
+            recommended_product_ids: selectedProducts.map(p => p.id),
             total_price: calculatedTotalPrice,
-            ai_explanation,
+            ai_explanation: aiExplanation,
             price_overrides: priceOverrides
         });
 
@@ -199,18 +234,19 @@ app.post('/api/recommend-pc', async (req, res) => {
         let errorMessage = "Yapay zeka yanıt oluştururken beklenmedik bir hata oluştu. Lütfen tekrar deneyin.";
         let statusCode = 500;
 
-        if (error?.status === 429) {
+        const status = getErrorStatus(error);
+        if (status === 429) {
             errorMessage = "Yapay zeka kullanım kotası sınırına ulaşıldı. Lütfen birkaç dakika sonra tekrar deneyin.";
             statusCode = 429;
-        } else if (error?.status === 503) {
+        } else if (status === 503) {
             errorMessage = "Yapay zeka sunucuları şu anda aşırı yoğun. Tüm yeniden deneme girişimleri başarısız oldu.";
             statusCode = 503;
-        } else if (error?.status === 400) {
+        } else if (status === 400) {
             errorMessage = "Yapay zekaya gönderilen istek geçersiz veya çok uzun. Lütfen daha kısa ve net yazın.";
             statusCode = 400;
         }
 
-        res.status(statusCode).json({ error: errorMessage });
+        return res.status(statusCode).json({ error: errorMessage });
     }
 });
 
