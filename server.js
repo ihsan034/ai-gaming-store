@@ -45,6 +45,8 @@ async function callGeminiWithRetry(requestOptions, maxRetries = 3) {
 // SADECE ÖNERİLEN ÜRÜNLERİN GERÇEK FİYATINI ÇEKEN FONKSİYON
 // ============================================================
 async function fetchRealPricesForProducts(selectedProducts) {
+    if (selectedProducts.length === 0) return {};
+
     const productList = selectedProducts
         .map(p => `ID${p.id}: ${p.brand} ${p.model}`)
         .join('\n');
@@ -52,7 +54,7 @@ async function fetchRealPricesForProducts(selectedProducts) {
     console.log(`🔍 ${selectedProducts.length} ürün için gerçek fiyat aranıyor...`);
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await callGeminiWithRetry({
             model: 'gemini-2.5-flash',
             contents: `Türkiye e-ticaret sitelerinde (Hepsiburada, Trendyol, İtopya) şu PC bileşenlerinin güncel ortalama fiyatlarını ara:
 
@@ -70,8 +72,17 @@ Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
 
         if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
-            console.log("✅ Gerçek fiyatlar alındı:", parsed);
-            return parsed;
+
+            // Sadece seçilen ürünlere ait, pozitif sayı olan fiyatları kabul et
+            // ("4.200 TL" gibi metinler veya 0/negatif değerler katalog fiyatına düşer)
+            const prices = {};
+            selectedProducts.forEach(p => {
+                const value = Number(parsed[`ID${p.id}`]);
+                if (Number.isFinite(value) && value > 0) prices[`ID${p.id}`] = Math.round(value);
+            });
+
+            console.log("✅ Gerçek fiyatlar alındı:", prices);
+            return prices;
         }
     } catch (err) {
         console.warn("⚠️ Gerçek fiyat alınamadı, veritabanı fiyatları kullanılıyor:", err.message);

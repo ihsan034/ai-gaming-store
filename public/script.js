@@ -9,6 +9,9 @@ const totalPriceSpan = document.getElementById('totalPrice');
 // Backend'den dinamik olarak çekeceğimiz ürün havuzu
 let allProducts = [];
 
+// Son öneride gösterilen gerçek fiyatlar: { productId: fiyat } — sepete de bu fiyat yazılır
+let currentPriceOverrides = {};
+
 const categoryTranslations = {
     "CPU": "İşlemci (CPU)",
     "GPU": "Ekran Kartı (GPU)",
@@ -61,7 +64,7 @@ async function handleSend() {
         }
 
         // AI mesajındaki markdown (**) işaretlerini temizleyip ekrana bas
-        const cleanedText = data.ai_explanation.replace(/\*\*/g, '');
+        const cleanedText = String(data.ai_explanation || '').replace(/\*\*/g, '');
         appendMessage(cleanedText, 'ai-message');
 
         // Gerçek fiyatları da renderProducts'a gönder
@@ -90,6 +93,7 @@ function appendMessage(text, className) {
 // priceOverrides: { productId: gercekFiyat } — gerçek piyasa fiyatları
 function renderProducts(productIds, totalPrice, priceOverrides = {}) {
     productsGrid.innerHTML = '';
+    currentPriceOverrides = priceOverrides;
 
     const categories = new Set();
     productIds.forEach(id => {
@@ -343,8 +347,10 @@ productsGrid.addEventListener('click', (e) => {
 
         const productId = parseInt(e.target.getAttribute('data-id'));
         const product = allProducts.find(p => p.id === productId);
+        if (!product) return;
 
-        cart.push(product);
+        // Kartta gösterilen fiyat neyse sepete de o fiyat yazılır
+        cart.push({ ...product, price: currentPriceOverrides[productId] || product.price });
         localStorage.setItem('cart', JSON.stringify(cart));
         updateAuthUI();
 
@@ -393,6 +399,12 @@ window.addEventListener('click', (e) => {
     if (e.target === loginModal) loginModal.style.display = 'none';
 });
 
+// Kullanıcının yazdığı metni (adres, telefon) HTML'e basmadan önce kaçışla
+function escapeHtml(text) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
 function renderOrders() {
     if (!ordersList || !currentUser) return;
 
@@ -411,21 +423,21 @@ function renderOrders() {
 
         const itemsHtml = order.items.map(item => `
             <div style="display: flex; justify-content: space-between; margin-bottom: 5px; color: #cbd5e1;">
-                <span>• ${item.brand} ${item.model}</span>
+                <span>• ${escapeHtml(item.brand)} ${escapeHtml(item.model)}</span>
                 <span style="font-weight: 600; color: #10b981;">${item.price.toLocaleString('tr-TR')} TL</span>
             </div>
         `).join('');
 
         orderBox.innerHTML = `
             <div style="display: flex; justify-content: space-between; font-weight: bold; color: #10b981; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 6px; margin-bottom: 10px; font-size: 0.95rem;">
-                <span>Sipariş No: ${order.id}</span>
+                <span>Sipariş No: ${escapeHtml(order.id)}</span>
                 <span style="color: #94a3b8; font-weight: normal;">${order.date} ${order.time}</span>
             </div>
             <div style="margin-bottom: 10px;">${itemsHtml}</div>
             <div style="border-top: 1px dashed rgba(255, 255, 255, 0.08); padding-top: 8px; display: flex; justify-content: space-between; align-items: flex-end;">
                 <div style="max-width: 65%; text-align: left; font-size: 0.8rem; color: #94a3b8; line-height: 1.4;">
-                    <div><strong>Tel:</strong> ${order.phone}</div>
-                    <div style="margin-top: 2px; word-break: break-word;"><strong>Adres:</strong> ${order.address}</div>
+                    <div><strong>Tel:</strong> ${escapeHtml(order.phone)}</div>
+                    <div style="margin-top: 2px; word-break: break-word;"><strong>Adres:</strong> ${escapeHtml(order.address)}</div>
                 </div>
                 <div style="font-size: 1.15rem; font-weight: bold; color: #10b981;">
                     Toplam: ${order.total.toLocaleString('tr-TR')} TL
