@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import path from 'node:path';
 import express, { Request, Response } from 'express';
-import cors from 'cors';
 import { GoogleGenAI, GenerateContentParameters, GenerateContentResponse } from '@google/genai';
 
 import { products } from './products';
+import { recommendLimiter, LIMITS } from './rateLimit';
 import type {
     Product,
     LivePrices,
@@ -23,9 +23,13 @@ if (!GEMINI_API_KEY) {
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+// gemini-2.5-flash yeni API anahtarlarına kapatıldı
+const GEMINI_MODEL = 'gemini-3.8-flash';
 
-app.use(cors());
-app.use(express.json());
+// Render bir proxy arkasında çalışır; gerçek kullanıcı IP'si X-Forwarded-For başlığından okunur
+app.set('trust proxy', 1);
+// Arayüz ve API aynı adreste olduğu için CORS açılmaz: başka siteler API'yi tarayıcıdan çağıramaz
+app.use(express.json({ limit: '10kb' }));
 // src/ (tsx) ve dist/ (derlenmiş) klasörlerinden aynı public/ klasörünü bul
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -72,51 +76,168 @@ async function callGeminiWithRetry(requestOptions: GenerateContentParameters, ma
 // ============================================================
 // SADECE ÖNERİLEN ÜRÜNLERİN GERÇEK FİYATINI ÇEKEN FONKSİYON
 // ============================================================
-async function fetchRealPricesForProducts(selectedProducts: Product[]): Promise<LivePrices> {
-    if (selectedProducts.length === 0) return {};
+// Canlı fiyat katalog fiyatının yarısından düşükse reddedilir (taksit tutarı, ikinci el ilan).
+// Üst sınır yok: katalog eski ve SSD/RAM fiyatları katlandı (ör. 32GB DDR5 katalogda 4.100 TL,
+// Akakçe'de 36.000 TL); yanlış fiyatlara karşı asıl koruma kaynağın arama sonucu olması.
+const MIN_PRICE_RATIO = 0.5;
 
-    const productList = selectedProducts
+// Bulunan fiyat 24 saat önbellekte tutulur; aynı ürünün fiyatı her istekte zıplamaz
+const PRICE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+interface CachedPrice {
+    price: number;
+    source?: string;
+    expiresAt: number;
+}
+
+const priceCache = new Map<number, CachedPrice>();
+
+// Google aramasının döndürdüğü bağlantılar bu adresle başlar. Modelin kendi yazdığı
+// adresler (ör. hepsiburada.com/...) uydurma olabildiği için kaynak sayılmaz.
+const GROUNDING_REDIRECT_PREFIX = 'https://vertexaisearch.cloud.google.com/grounding-api-redirect/';
+
+function isSearchSource(source: string | undefined, groundingUris: Set<string>): boolean {
+    if (!source) return false;
+    return source.startsWith(GROUNDING_REDIRECT_PREFIX) || groundingUris.has(source);
+}
+
+// Modelin cevabındaki JSON nesnesini çıkar (```json bloğu veya açıklama metni içinde olabilir)
+function extractJsonObject(text: string): Record<string, unknown> | null {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start === -1 || end <= start) return null;
+    try {
+        const parsed: unknown = JSON.parse(text.slice(start, end + 1));
+        return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : null;
+    } catch {
+        return null;
+    }
+}
+
+// Bir ürünün değeri { "price": 5499, "source": "https://..." } veya düz sayı olarak gelebilir
+function readPriceEntry(entry: unknown): { price: number; source?: string } | null {
+    if (typeof entry === 'object' && entry !== null && 'price' in entry) {
+        const price = Number(entry.price);
+        const source = 'source' in entry && typeof entry.source === 'string' ? entry.source : undefined;
+        return Number.isFinite(price) && price > 0 ? { price, source } : null;
+    }
+    const price = Number(entry);
+    return Number.isFinite(price) && price > 0 ? { price } : null;
+}
+
+// Bir grup ürünün fiyatını tek bir Gemini isteğiyle arar; kabul edilen fiyatları `prices`'a ve
+// önbelleğe yazar, fiyatı bulunamayan veya reddedilen ürünleri döndürür.
+async function searchPricesOnce(toSearch: Product[], prices: LivePrices, now: number): Promise<Product[]> {
+    const productList = toSearch
         .map(p => `ID${p.id}: ${p.brand} ${p.model}`)
         .join('\n');
 
-    console.log(`🔍 ${selectedProducts.length} ürün için gerçek fiyat aranıyor...`);
+    const missing: Product[] = [];
 
     try {
         const response = await callGeminiWithRetry({
-            model: 'gemini-2.5-flash',
-            contents: `Türkiye e-ticaret sitelerinde (Hepsiburada, Trendyol, İtopya) şu PC bileşenlerinin güncel ortalama fiyatlarını ara:
+            model: GEMINI_MODEL,
+            contents: `Türkiye'de şu PC bileşenlerinin güncel, sıfır ürün satış fiyatlarını ara. Her ürün için ayrı arama yap; fiyat karşılaştırma sitelerini (Akakçe, Cimri) ve e-ticaret sitelerini (Hepsiburada, Trendyol, İtopya) kullan:
 
 ${productList}
 
+Kurallar:
+- Fiyat, ürünün tek seferde ödenen TL fiyatı olmalı; taksit tutarı, ikinci el veya farklı model fiyatı kullanma.
+- Her fiyat için o fiyatı gördüğün Google arama sonucunun bağlantısını "source" alanına olduğu gibi kopyala; adres uydurma veya kendin yazma.
+- Fiyatı bu aramada gördüğün sonuçlardan al, kendi bilgine dayanarak fiyat yazma.
+- Güvenilir bir fiyat bulamadığın ürün için null yaz.
+
 Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
-{"ID1": 4200, "ID11": 9500}`,
+{"ID1": {"price": 4200, "source": "https://..."}, "ID11": null}`,
             config: {
                 tools: [{ googleSearch: {} }]
             }
         });
 
-        const text = response.text || "";
-        const jsonMatch = text.match(/\{[^{}]+\}/);
+        const grounding = response.candidates?.[0]?.groundingMetadata;
+        const searchCount = grounding?.webSearchQueries?.length ?? 0;
+        const sourceCount = grounding?.groundingChunks?.length ?? 0;
+        const groundingUris = new Set(
+            (grounding?.groundingChunks ?? [])
+                .map(chunk => chunk.web?.uri)
+                .filter((uri): uri is string => typeof uri === 'string')
+        );
+        const parsed = extractJsonObject(response.text || "");
 
-        if (jsonMatch) {
-            const parsed: Record<string, unknown> = JSON.parse(jsonMatch[0]);
-
-            // Sadece seçilen ürünlere ait, pozitif sayı olan fiyatları kabul et
-            // ("4.200 TL" gibi metinler veya 0/negatif değerler katalog fiyatına düşer)
-            const prices: LivePrices = {};
-            selectedProducts.forEach(p => {
-                const value = Number(parsed[`ID${p.id}`]);
-                if (Number.isFinite(value) && value > 0) prices[`ID${p.id}`] = Math.round(value);
-            });
-
-            console.log("✅ Gerçek fiyatlar alındı:", prices);
-            return prices;
+        if (!parsed) {
+            console.warn("⚠️ Fiyat cevabında JSON bulunamadı.");
+            return toSearch;
         }
+
+        toSearch.forEach(p => {
+            const entry = readPriceEntry(parsed[`ID${p.id}`]);
+            const label = `ID${p.id} ${p.brand} ${p.model}`;
+
+            if (!entry) {
+                console.log(`   ➖ ${label}: bulunamadı`);
+                missing.push(p);
+                return;
+            }
+
+            const price = Math.round(entry.price);
+
+            if (!isSearchSource(entry.source, groundingUris)) {
+                console.log(`   ❌ ${label}: ${price} TL reddedildi, kaynak arama sonucu değil: ${entry.source ?? "yok"}`);
+                missing.push(p);
+                return;
+            }
+
+            const ratio = price / p.price;
+            if (ratio < MIN_PRICE_RATIO) {
+                console.log(`   ❌ ${label}: ${price} TL reddedildi (katalog ${p.price} TL), kaynak: ${entry.source ?? "yok"}`);
+                missing.push(p);
+                return;
+            }
+
+            prices[`ID${p.id}`] = price;
+            priceCache.set(p.id, { price, source: entry.source, expiresAt: now + PRICE_CACHE_TTL_MS });
+            console.log(`   ✅ ${label}: ${price} TL, kaynak: ${entry.source ?? "yok"}`);
+        });
+
+        console.log(`   (${searchCount} Google araması, ${sourceCount} kaynak)`);
+        return missing;
     } catch (err) {
-        console.warn("⚠️ Gerçek fiyat alınamadı, veritabanı fiyatları kullanılıyor:", getErrorMessage(err));
+        console.warn("⚠️ Fiyat araması başarısız:", getErrorMessage(err));
+        return toSearch;
+    }
+}
+
+async function fetchRealPricesForProducts(selectedProducts: Product[]): Promise<LivePrices> {
+    const prices: LivePrices = {};
+    const now = Date.now();
+
+    // Önbellekte geçerli fiyatı olan ürünleri tekrar arama
+    const toSearch = selectedProducts.filter(p => {
+        const cached = priceCache.get(p.id);
+        if (cached && cached.expiresAt > now) {
+            prices[`ID${p.id}`] = cached.price;
+            return false;
+        }
+        return true;
+    });
+
+    if (selectedProducts.length > toSearch.length) {
+        console.log(`💾 ${selectedProducts.length - toSearch.length} ürünün fiyatı önbellekten alındı.`);
+    }
+    if (toSearch.length === 0) return prices;
+
+    console.log(`🔍 ${toSearch.length} ürün için gerçek fiyat aranıyor...`);
+    let missing = await searchPricesOnce(toSearch, prices, now);
+
+    // Bulunamayanlar için tek bir ikinci deneme (kota için ürün başına ayrı istek atılmaz)
+    if (missing.length > 0) {
+        console.log(`🔁 ${missing.length} ürün için ikinci deneme...`);
+        missing = await searchPricesOnce(missing, prices, now);
     }
 
-    return {};
+    const found = toSearch.length - missing.length;
+    console.log(`✅ Fiyat araması bitti: ${found}/${toSearch.length} canlı fiyat, ${missing.length} ürün katalog fiyatında.`);
+    return prices;
 }
 
 // ============================================================
@@ -131,7 +252,7 @@ app.get('/api/products', (req: Request, res: Response<Product[]>) => {
     res.json(products);
 });
 
-app.post('/api/recommend-pc', async (
+app.post('/api/recommend-pc', recommendLimiter, async (
     req: Request<{}, RecommendResponse | ErrorResponse, RecommendRequest>,
     res: Response<RecommendResponse | ErrorResponse>
 ) => {
@@ -165,7 +286,7 @@ app.post('/api/recommend-pc', async (
 
         // 1. AŞAMA: Gemini'den ürün önerisi al
         const response = await callGeminiWithRetry({
-            model: 'gemini-2.5-flash',
+            model: GEMINI_MODEL,
             contents: userPrompt,
             config: {
                 systemInstruction,
@@ -252,4 +373,5 @@ app.post('/api/recommend-pc', async (
 
 app.listen(PORT, () => {
     console.log(`✅ Sunucu ${PORT} portunda başarıyla başlatıldı.`);
+    console.log(`🛡️ Sınırlar: IP başına ${LIMITS.perIpPerMinute}/dk ve ${LIMITS.perIpPerDay}/gün, toplam ${LIMITS.globalPerDay}/gün, mesaj ${LIMITS.maxPromptLength} karakter.`);
 });
