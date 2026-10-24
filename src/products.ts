@@ -1,6 +1,7 @@
 import type { Product } from './types';
 
-// Fiyatlar 24.10.2026'da Akakçe'deki en ucuz satış fiyatlarına göre güncellendi.
+// Fiyatlar 24-25.10.2026'da Akakçe'deki en ucuz satış fiyatlarına göre güncellendi;
+// piyasadan kalkan ürünler güncel muadilleriyle (ör. RTX 40 → RTX 50) değiştirildi.
 // stock: 0 → piyasada artık bulunamayan ürün; yapay zekâya önerilmez.
 
 export const products: Product[] = [
@@ -23,10 +24,10 @@ export const products: Product[] = [
     { id: 14, category: "GPU", brand: "NVIDIA", model: "RTX 4060", price: 37849, stock: 25, specs: { vram: "8GB", power_recommendation: "550W" } },
     { id: 15, category: "GPU", brand: "NVIDIA", model: "RTX 4060 Ti", price: 30659, stock: 15, specs: { vram: "8GB", power_recommendation: "600W" } },
     { id: 16, category: "GPU", brand: "AMD", model: "Radeon RX 7700 XT", price: 37199, stock: 9, specs: { vram: "12GB", power_recommendation: "700W" } },
-    { id: 17, category: "GPU", brand: "NVIDIA", model: "RTX 4070 Super", price: 24000, stock: 0, specs: { vram: "12GB", power_recommendation: "650W" } },
+    { id: 17, category: "GPU", brand: "Asus", model: "RTX 5070 Dual OC 12GB", price: 60231, stock: 10, specs: { vram: "12GB", power_recommendation: "650W" } },
     { id: 18, category: "GPU", brand: "AMD", model: "Radeon RX 7800 XT", price: 56784, stock: 10, specs: { vram: "16GB", power_recommendation: "700W" } },
-    { id: 19, category: "GPU", brand: "NVIDIA", model: "RTX 4070 Ti Super", price: 34500, stock: 0, specs: { vram: "16GB", power_recommendation: "750W" } },
-    { id: 20, category: "GPU", brand: "NVIDIA", model: "RTX 4080 Super", price: 44000, stock: 0, specs: { vram: "16GB", power_recommendation: "750W" } },
+    { id: 19, category: "GPU", brand: "MSI", model: "RTX 5070 Ti Shadow 3X OC 16GB", price: 89950, stock: 8, specs: { vram: "16GB", power_recommendation: "750W" } },
+    { id: 20, category: "GPU", brand: "MSI", model: "RTX 5080 Shadow 3X OC 16GB", price: 111707, stock: 5, specs: { vram: "16GB", power_recommendation: "850W" } },
 
     // --- ANAKARTLAR (Motherboard) - 10 ADET ---
     { id: 21, category: "Motherboard", brand: "Gigabyte", model: "H610M H", price: 3928, stock: 16, specs: { socket: "LGA1700", ram_type: "DDR4" } },
@@ -37,11 +38,11 @@ export const products: Product[] = [
     { id: 26, category: "Motherboard", brand: "Asus", model: "PRIME B760-PLUS DDR5", price: 17031, stock: 8, specs: { socket: "LGA1700", ram_type: "DDR5" } },
     { id: 27, category: "Motherboard", brand: "MSI", model: "MAG B650 Tomahawk Wi-Fi", price: 26603, stock: 7, specs: { socket: "AM5", ram_type: "DDR5" } },
     { id: 28, category: "Motherboard", brand: "Asus", model: "TUF Gaming Z790-Plus Wi-Fi", price: 12835, stock: 5, specs: { socket: "LGA1700", ram_type: "DDR5" } },
-    { id: 29, category: "Motherboard", brand: "MSI", model: "MPG X670E Carbon Wi-Fi", price: 13500, stock: 0, specs: { socket: "AM5", ram_type: "DDR5" } },
-    { id: 30, category: "Motherboard", brand: "Asus", model: "ROG Maximus Z790 Hero", price: 23000, stock: 0, specs: { socket: "LGA1700", ram_type: "DDR5" } },
+    { id: 29, category: "Motherboard", brand: "MSI", model: "X870 Gaming Plus Wi-Fi", price: 14694, stock: 8, specs: { socket: "AM5", ram_type: "DDR5" } },
+    { id: 30, category: "Motherboard", brand: "MSI", model: "MAG Z790 Tomahawk Wi-Fi", price: 13560, stock: 6, specs: { socket: "LGA1700", ram_type: "DDR5" } },
 
     // --- BELLEKLER (RAM) - 10 ADET ---
-    { id: 31, category: "RAM", brand: "G.Skill", model: "8GB Ripjaws V 3200MHz", price: 850, stock: 0, specs: { ram_type: "DDR4" } },
+    { id: 31, category: "RAM", brand: "Kingston", model: "8GB Fury Beast 3200MHz DDR4", price: 3607, stock: 25, specs: { ram_type: "DDR4" } },
     { id: 32, category: "RAM", brand: "Corsair", model: "16GB (2x8) Vengeance 3200MHz", price: 6649, stock: 40, specs: { ram_type: "DDR4" } },
     { id: 33, category: "RAM", brand: "Kingston", model: "16GB Fury Beast 3600MHz DDR4", price: 7399, stock: 25, specs: { ram_type: "DDR4" } },
     { id: 34, category: "RAM", brand: "XPG", model: "16GB Gammix D30 3200MHz DDR4", price: 9200, stock: 22, specs: { ram_type: "DDR4" } },
@@ -54,14 +55,14 @@ export const products: Product[] = [
 
     // --- GÜÇ KAYNAKLARI (PSU) - 10 ADET ---
     { id: 41, category: "Power", brand: "Frisby", model: "500W FR-PS5080P", price: 2036, stock: 25, specs: { wattage: 500 } },
-    { id: 42, category: "Power", brand: "Zalman", model: "600W Megamax v2", price: 1900, stock: 30, specs: { wattage: 600 } },
+    { id: 42, category: "Power", brand: "Frisby", model: "600W FR-PS6080P", price: 2036, stock: 30, specs: { wattage: 600 } },
     { id: 43, category: "Power", brand: "DeepCool", model: "550W PK550D 80+", price: 4799, stock: 20, specs: { wattage: 550 } },
     { id: 44, category: "Power", brand: "Corsair", model: "650W CV650 80+ Bronze", price: 9999, stock: 15, specs: { wattage: 650 } },
-    { id: 45, category: "Power", brand: "High Power", model: "700W Element BR 80+", price: 2200, stock: 0, specs: { wattage: 700 } },
+    { id: 45, category: "Power", brand: "NZXT", model: "C750 Bronze 750W", price: 3998, stock: 15, specs: { wattage: 750 } },
     { id: 46, category: "Power", brand: "MSI", model: "MAG A650BN 650W 80+", price: 2999, stock: 14, specs: { wattage: 650 } },
-    { id: 47, category: "Power", brand: "Corsair", model: "750W RM750e Modüler Gold", price: 4200, stock: 12, specs: { wattage: 750 } },
+    { id: 47, category: "Power", brand: "Corsair", model: "750W RM750e Modüler Gold", price: 6524, stock: 12, specs: { wattage: 750 } },
     { id: 48, category: "Power", brand: "Asus", model: "TUF Gaming 750B 750W Bronze", price: 4390, stock: 10, specs: { wattage: 750 } },
-    { id: 49, category: "Power", brand: "FSP", model: "Hydro G Pro 850W Gold Modüler", price: 5400, stock: 0, specs: { wattage: 850 } },
+    { id: 49, category: "Power", brand: "MSI", model: "MAG A850GL Gen5 850W Gold", price: 6999, stock: 10, specs: { wattage: 850 } },
     { id: 50, category: "Power", brand: "Asus", model: "ROG Thor 1000W Platinum II", price: 17107, stock: 3, specs: { wattage: 1000 } },
 
     // --- DEPOLAMA (SSD) - 5 ADET ---
@@ -72,7 +73,7 @@ export const products: Product[] = [
     { id: 55, category: "SSD", brand: "Kingston", model: "2TB KC3000 NVMe M.2", price: 20899, stock: 10, specs: { capacity: "2TB", read_speed: "7000MB/s" } },
 
     // --- KASALAR (Case) - 5 ADET ---
-    { id: 56, category: "Case", brand: "Frisby", model: "FC-9320G 600W Mesh Dual Ring", price: 2600, stock: 0, specs: { form_factor: "ATX Mid Tower", fans: "4x120mm RGB" } },
+    { id: 56, category: "Case", brand: "NZXT", model: "H7 Flow 2024", price: 3579, stock: 12, specs: { form_factor: "ATX Mid Tower", fans: "Fanlı" } },
     { id: 57, category: "Case", brand: "MSI", model: "MAG Forge 100M Mesh", price: 2021, stock: 18, specs: { form_factor: "ATX Mid Tower", fans: "3x120mm RGB" } },
     { id: 58, category: "Case", brand: "Corsair", model: "4000D Airflow Tempered Glass", price: 6638, stock: 15, specs: { form_factor: "ATX Mid Tower", fans: "2x120mm" } },
     { id: 59, category: "Case", brand: "Asus", model: "TUF Gaming GT301 ARGB Mesh", price: 4399, stock: 10, specs: { form_factor: "ATX Mid Tower", fans: "4x120mm ARGB" } },
