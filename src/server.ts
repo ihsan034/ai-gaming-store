@@ -26,8 +26,10 @@ const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 // gemini-2.5-flash yeni API anahtarlarına kapatıldı
 const GEMINI_MODEL = 'gemini-3.8-flash';
 
-// Render bir proxy arkasında çalışır; gerçek kullanıcı IP'si X-Forwarded-For başlığından okunur
-app.set('trust proxy', 1);
+// Render'da istek kullanıcı → Cloudflare → Render iç ağı → sunucu yolunu izler (loglarla doğrulandı:
+// x-forwarded-for = "kullanıcı, cloudflare, 10.x"). 3 adıma güvenince req.ip Cloudflare'in yazdığı
+// gerçek kullanıcı IP'si olur; kullanıcının başlığa eklediği sahte IP'ler dikkate alınmaz.
+app.set('trust proxy', 3);
 // Arayüz ve API aynı adreste olduğu için CORS açılmaz: başka siteler API'yi tarayıcıdan çağıramaz
 app.use(express.json({ limit: '10kb' }));
 // src/ (tsx) ve dist/ (derlenmiş) klasörlerinden aynı public/ klasörünü bul
@@ -155,8 +157,6 @@ Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
         });
 
         const grounding = response.candidates?.[0]?.groundingMetadata;
-        const searchCount = grounding?.webSearchQueries?.length ?? 0;
-        const sourceCount = grounding?.groundingChunks?.length ?? 0;
         const groundingUris = new Set(
             (grounding?.groundingChunks ?? [])
                 .map(chunk => chunk.web?.uri)
@@ -199,7 +199,6 @@ Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
             console.log(`   ✅ ${label}: ${price} TL, kaynak: ${entry.source ?? "yok"}`);
         });
 
-        console.log(`   (${searchCount} Google araması, ${sourceCount} kaynak)`);
         return missing;
     } catch (err) {
         console.warn("⚠️ Fiyat araması başarısız:", getErrorMessage(err));
