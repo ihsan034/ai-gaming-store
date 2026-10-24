@@ -26,6 +26,9 @@ const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 // gemini-2.5-flash yeni API anahtarlarına kapatıldı
 const GEMINI_MODEL = 'gemini-3.8-flash';
 
+// Yapay zekâya sadece piyasada bulunan ürünler gösterilir (stok 0 = artık satılmıyor)
+const availableProducts = products.filter(p => p.stock > 0);
+
 // Render'da istek kullanıcı → Cloudflare → Render iç ağı → sunucu yolunu izler (loglarla doğrulandı:
 // x-forwarded-for = "kullanıcı, cloudflare, 10.x"). 3 adıma güvenince req.ip Cloudflare'in yazdığı
 // gerçek kullanıcı IP'si olur; kullanıcının başlığa eklediği sahte IP'ler dikkate alınmaz.
@@ -267,7 +270,7 @@ app.post('/api/recommend-pc', recommendLimiter, async (
         Görevin, kullanıcının isteklerine (bütçe, oyun/program tercihleri, özel istekler) en uygun bilgisayar sistemini oluşturmaktır.
 
         AŞAĞIDAKİ ÜRÜN HAVUZUNU KULLANMAK ZORUNDASIN. Havuzda olmayan hiçbir ürünü listeye ekleme:
-        ${JSON.stringify(products, null, 2)}
+        ${JSON.stringify(availableProducts, null, 2)}
 
         UYULMASI ZORUNLU KURALLAR:
         1. Toplam sistem fiyatı kullanıcının belirttiği bütçeyi kesinlikle AŞMAMALIDIR.
@@ -320,7 +323,7 @@ app.post('/api/recommend-pc', recommendLimiter, async (
         // Ürün ID'lerini veritabanına göre doğrula
         const selectedProducts: Product[] = [];
         recommendedIds.forEach(id => {
-            const product = products.find(p => p.id === Number(id));
+            const product = availableProducts.find(p => p.id === Number(id));
             if (product) {
                 selectedProducts.push(product);
             } else {
