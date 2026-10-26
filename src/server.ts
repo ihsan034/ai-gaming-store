@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import path from 'node:path';
 import express, { Request, Response } from 'express';
-import { GoogleGenAI, GenerateContentParameters, GenerateContentResponse } from '@google/genai';
+import { GoogleGenAI, GenerateContentParameters, GenerateContentResponse, ThinkingLevel } from '@google/genai';
 
 import { products } from './products';
 import { recommendLimiter, LIMITS } from './rateLimit';
@@ -25,6 +25,9 @@ const PORT = Number(process.env.PORT) || 5000;
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 // gemini-2.5-flash yeni API anahtarlarına kapatıldı
 const GEMINI_MODEL = 'gemini-3.8-flash';
+// Fiyat araması basit bir "bul ve yaz" işi: LOW ile ~10 sn, varsayılanla ~18 sn (ölçüm 26.10.2026).
+// Öneri çağrısında düşünme kısılmaz: LOW'da 4 sistemin 4'ü bütçeyi aştı, varsayılanda hepsi doğruydu.
+const PRICE_SEARCH_THINKING = ThinkingLevel.LOW;
 
 // Yapay zekâya sadece piyasada bulunan ürünler gösterilir (stok 0 = artık satılmıyor)
 const availableProducts = products.filter(p => p.stock > 0);
@@ -155,7 +158,8 @@ Kurallar:
 Sadece şu JSON formatında yanıt ver, başka hiçbir şey yazma:
 {"ID1": {"price": 4200, "source": "https://..."}, "ID11": null}`,
             config: {
-                tools: [{ googleSearch: {} }]
+                tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: PRICE_SEARCH_THINKING }
             }
         });
 
