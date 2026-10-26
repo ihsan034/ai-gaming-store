@@ -34,7 +34,7 @@ export const products: Product[] = [
     { id: 22, category: "Motherboard", brand: "MSI", model: "A520M-A Pro", price: 3022, stock: 15, specs: { socket: "AM4", ram_type: "DDR4" } },
     { id: 23, category: "Motherboard", brand: "Asus", model: "Prime B550M-K", price: 5049, stock: 12, specs: { socket: "AM4", ram_type: "DDR4" } },
     { id: 24, category: "Motherboard", brand: "MSI", model: "PRO B760M-P DDR4", price: 6199, stock: 10, specs: { socket: "LGA1700", ram_type: "DDR4" } },
-    { id: 25, category: "Motherboard", brand: "Gigabyte", model: "B650M DS3H", price: 42800, stock: 14, specs: { socket: "AM5", ram_type: "DDR5" } },
+    { id: 25, category: "Motherboard", brand: "Asus", model: "Prime B650M-R", price: 4899, stock: 20, specs: { socket: "AM5", ram_type: "DDR5" } },
     { id: 26, category: "Motherboard", brand: "Asus", model: "PRIME B760-PLUS DDR5", price: 17031, stock: 8, specs: { socket: "LGA1700", ram_type: "DDR5" } },
     { id: 27, category: "Motherboard", brand: "MSI", model: "MAG B650 Tomahawk Wi-Fi", price: 26603, stock: 7, specs: { socket: "AM5", ram_type: "DDR5" } },
     { id: 28, category: "Motherboard", brand: "Asus", model: "TUF Gaming Z790-Plus Wi-Fi", price: 12835, stock: 5, specs: { socket: "LGA1700", ram_type: "DDR5" } },
