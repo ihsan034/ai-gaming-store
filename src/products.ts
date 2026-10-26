@@ -17,29 +17,34 @@ export const products: Product[] = [
     { id: 9, category: "CPU", brand: "Intel", model: "Core i7-14700K", price: 19019, stock: 4, specs: { socket: "LGA1700", ram_type: "DDR5", power: "125W" } },
     { id: 10, category: "CPU", brand: "Intel", model: "Core i9-14900K", price: 22999, stock: 3, specs: { socket: "LGA1700", ram_type: "DDR5", power: "125W" } },
 
-    // --- EKRAN KARTLARI (GPU) - 10 ADET ---
+    // --- EKRAN KARTLARI (GPU) - 13 ADET ---
     { id: 11, category: "GPU", brand: "AMD", model: "Radeon RX 6600", price: 25275, stock: 14, specs: { vram: "8GB", power_recommendation: "500W" } },
     { id: 12, category: "GPU", brand: "NVIDIA", model: "RTX 3060", price: 28419, stock: 11, specs: { vram: "12GB", power_recommendation: "550W" } },
     { id: 13, category: "GPU", brand: "AMD", model: "Radeon RX 7600", price: 20459, stock: 20, specs: { vram: "8GB", power_recommendation: "550W" } },
-    { id: 14, category: "GPU", brand: "NVIDIA", model: "RTX 4060", price: 37849, stock: 25, specs: { vram: "8GB", power_recommendation: "550W" } },
+    { id: 14, category: "GPU", brand: "Asus", model: "RTX 5060 Dual OC 8GB", price: 30821, stock: 25, specs: { vram: "8GB", power_recommendation: "550W" } },
     { id: 15, category: "GPU", brand: "NVIDIA", model: "RTX 4060 Ti", price: 30659, stock: 15, specs: { vram: "8GB", power_recommendation: "600W" } },
     { id: 16, category: "GPU", brand: "AMD", model: "Radeon RX 7700 XT", price: 37199, stock: 9, specs: { vram: "12GB", power_recommendation: "700W" } },
     { id: 17, category: "GPU", brand: "Asus", model: "RTX 5070 Dual OC 12GB", price: 60231, stock: 10, specs: { vram: "12GB", power_recommendation: "650W" } },
-    { id: 18, category: "GPU", brand: "AMD", model: "Radeon RX 7800 XT", price: 56784, stock: 10, specs: { vram: "16GB", power_recommendation: "700W" } },
+    { id: 18, category: "GPU", brand: "Gigabyte", model: "RX 9070 XT Gaming OC 16GB", price: 59400, stock: 10, specs: { vram: "16GB", power_recommendation: "750W" } },
     { id: 19, category: "GPU", brand: "MSI", model: "RTX 5070 Ti Shadow 3X OC 16GB", price: 89950, stock: 8, specs: { vram: "16GB", power_recommendation: "750W" } },
     { id: 20, category: "GPU", brand: "MSI", model: "RTX 5080 Shadow 3X OC 16GB", price: 111707, stock: 5, specs: { vram: "16GB", power_recommendation: "850W" } },
+    { id: 68, category: "GPU", brand: "Asus", model: "RTX 5060 Ti Dual OC 8GB", price: 36703, stock: 20, specs: { vram: "8GB", power_recommendation: "600W" } },
+    { id: 69, category: "GPU", brand: "MSI", model: "RTX 5060 Ti Shadow 2X OC 16GB", price: 52169, stock: 15, specs: { vram: "16GB", power_recommendation: "600W" } },
+    { id: 70, category: "GPU", brand: "Gigabyte", model: "RX 9060 XT Gaming OC 16GB", price: 36598, stock: 15, specs: { vram: "16GB", power_recommendation: "550W" } },
 
-    // --- ANAKARTLAR (Motherboard) - 10 ADET ---
+    // --- ANAKARTLAR (Motherboard) - 12 ADET ---
     { id: 21, category: "Motherboard", brand: "Gigabyte", model: "H610M H", price: 3928, stock: 16, specs: { socket: "LGA1700", ram_type: "DDR4" } },
     { id: 22, category: "Motherboard", brand: "MSI", model: "A520M-A Pro", price: 3022, stock: 15, specs: { socket: "AM4", ram_type: "DDR4" } },
     { id: 23, category: "Motherboard", brand: "Asus", model: "Prime B550M-K", price: 5049, stock: 12, specs: { socket: "AM4", ram_type: "DDR4" } },
     { id: 24, category: "Motherboard", brand: "MSI", model: "PRO B760M-P DDR4", price: 6199, stock: 10, specs: { socket: "LGA1700", ram_type: "DDR4" } },
     { id: 25, category: "Motherboard", brand: "Asus", model: "Prime B650M-R", price: 4899, stock: 20, specs: { socket: "AM5", ram_type: "DDR5" } },
-    { id: 26, category: "Motherboard", brand: "Asus", model: "PRIME B760-PLUS DDR5", price: 17031, stock: 8, specs: { socket: "LGA1700", ram_type: "DDR5" } },
-    { id: 27, category: "Motherboard", brand: "MSI", model: "MAG B650 Tomahawk Wi-Fi", price: 26603, stock: 7, specs: { socket: "AM5", ram_type: "DDR5" } },
+    { id: 26, category: "Motherboard", brand: "Gigabyte", model: "B760M-E DDR5", price: 3550, stock: 20, specs: { socket: "LGA1700", ram_type: "DDR5" } },
+    { id: 27, category: "Motherboard", brand: "MSI", model: "MAG B850 Tomahawk Wi-Fi", price: 14999, stock: 10, specs: { socket: "AM5", ram_type: "DDR5" } },
     { id: 28, category: "Motherboard", brand: "Asus", model: "TUF Gaming Z790-Plus Wi-Fi", price: 12835, stock: 5, specs: { socket: "LGA1700", ram_type: "DDR5" } },
     { id: 29, category: "Motherboard", brand: "MSI", model: "X870 Gaming Plus Wi-Fi", price: 14694, stock: 8, specs: { socket: "AM5", ram_type: "DDR5" } },
     { id: 30, category: "Motherboard", brand: "MSI", model: "MAG Z790 Tomahawk Wi-Fi", price: 13560, stock: 6, specs: { socket: "LGA1700", ram_type: "DDR5" } },
+    { id: 71, category: "Motherboard", brand: "Gigabyte", model: "B650 Eagle", price: 8218, stock: 15, specs: { socket: "AM5", ram_type: "DDR5" } },
+    { id: 72, category: "Motherboard", brand: "MSI", model: "MAG B850 Gaming Plus Max Wi-Fi", price: 11098, stock: 15, specs: { socket: "AM5", ram_type: "DDR5" } },
 
     // --- BELLEKLER (RAM) - 10 ADET ---
     { id: 31, category: "RAM", brand: "Kingston", model: "8GB Fury Beast 3200MHz DDR4", price: 3607, stock: 25, specs: { ram_type: "DDR4" } },
