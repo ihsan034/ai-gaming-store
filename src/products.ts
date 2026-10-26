@@ -77,5 +77,15 @@ export const products: Product[] = [
     { id: 57, category: "Case", brand: "MSI", model: "MAG Forge 100M Mesh", price: 2021, stock: 18, specs: { form_factor: "ATX Mid Tower", fans: "3x120mm RGB" } },
     { id: 58, category: "Case", brand: "Corsair", model: "4000D Airflow Tempered Glass", price: 6638, stock: 15, specs: { form_factor: "ATX Mid Tower", fans: "2x120mm" } },
     { id: 59, category: "Case", brand: "Asus", model: "TUF Gaming GT301 ARGB Mesh", price: 4399, stock: 10, specs: { form_factor: "ATX Mid Tower", fans: "4x120mm ARGB" } },
-    { id: 60, category: "Case", brand: "Lian Li", model: "Lancool III RGB Black", price: 9999, stock: 5, specs: { form_factor: "ATX Mid Tower", fans: "4x140mm ARGB" } }
+    { id: 60, category: "Case", brand: "Lian Li", model: "Lancool III RGB Black", price: 9999, stock: 5, specs: { form_factor: "ATX Mid Tower", fans: "4x140mm ARGB" } },
+
+    // --- İŞLEMCİ SOĞUTUCULARI (Cooler) - 7 ADET ---
+    // Katalogdaki işlemciler kutusuz (tray) fiyatlıdır ve soğutucuyla gelmez.
+    { id: 61, category: "Cooler", brand: "MSI", model: "MAG CoreFrozr AA13 ARGB", price: 1399, stock: 30, specs: { type: "Hava - tek kule", sockets: "AM4/AM5/LGA1700" } },
+    { id: 62, category: "Cooler", brand: "DeepCool", model: "AK400 G2", price: 2204, stock: 20, specs: { type: "Hava - tek kule", sockets: "AM4/AM5/LGA1700" } },
+    { id: 63, category: "Cooler", brand: "Thermalright", model: "Peerless Assassin 120 SE", price: 2282, stock: 15, specs: { type: "Hava - çift kule", sockets: "AM4/AM5/LGA1700" } },
+    { id: 64, category: "Cooler", brand: "DeepCool", model: "AK620 G2", price: 3772, stock: 12, specs: { type: "Hava - çift kule", sockets: "AM4/AM5/LGA1700" } },
+    { id: 65, category: "Cooler", brand: "DeepCool", model: "LE360 V2 RGB 360mm", price: 3723, stock: 15, specs: { type: "Sıvı 360mm", sockets: "AM4/AM5/LGA1700" } },
+    { id: 66, category: "Cooler", brand: "Arctic", model: "Liquid Freezer III Pro 240 ARGB", price: 6300, stock: 8, specs: { type: "Sıvı 240mm", sockets: "AM4/AM5/LGA1700" } },
+    { id: 67, category: "Cooler", brand: "Arctic", model: "Liquid Freezer III Pro 360 ARGB", price: 6449, stock: 10, specs: { type: "Sıvı 360mm", sockets: "AM4/AM5/LGA1700" } }
 ];

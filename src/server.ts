@@ -279,13 +279,15 @@ app.post('/api/recommend-pc', recommendLimiter, async (
         UYULMASI ZORUNLU KURALLAR:
         1. Toplam sistem fiyatı kullanıcının belirttiği bütçeyi kesinlikle AŞMAMALIDIR.
         2. Seçtiğin parçalar birbiriyle uyumlu olmalıdır (AM4↔AM4↔DDR4, AM5↔AM5↔DDR5, LGA1700↔LGA1700).
-        3. Kullanıcı komple bir bilgisayar toplamak istiyorsa sistemde mutlaka en az 1 adet CPU, 1 adet GPU, 1 adet Motherboard, 1 adet RAM, 1 adet Power (PSU), 1 adet SSD ve 1 adet Case bulunmalıdır.
+        3. Kullanıcı komple bir bilgisayar toplamak istiyorsa sistemde mutlaka en az 1 adet CPU, 1 adet GPU, 1 adet Motherboard, 1 adet RAM, 1 adet Power (PSU), 1 adet SSD, 1 adet Case ve 1 adet Cooler (işlemci soğutucu) bulunmalıdır. Katalogdaki işlemciler soğutucusuz satılır.
         4. Kullanıcı sadece belirli bir parça istiyorsa (Örn: "sadece ekran kartı göster") sadece o kategorileri listele.
-        5. Isınma endişesi varsa açıklamada belirt.
+        5. Soğutucu işlemcinin gücüne uygun olmalıdır: 65W işlemciye herhangi bir soğutucu; 105W-120W işlemciye en az "Hava - tek kule"; 125W işlemciye (i5-14600K, i7-14700K) "Hava - çift kule" veya sıvı; i9-14900K'ya sıvı soğutucu (tercihen 360mm).
+        6. Güç kaynağının gücü, ekran kartının power_recommendation değerinden düşük olmamalıdır.
+        7. Isınma endişesi varsa açıklamada belirt.
 
         YANIT FORMATI (sadece JSON, markdown yok):
         {
-          "recommended_product_ids": [1, 11, 22, 32, 41, 51, 56],
+          "recommended_product_ids": [1, 11, 22, 32, 41, 51, 57, 61],
           "total_price": 22400,
           "ai_explanation": "Kullanıcıya sistemin neden seçildiğini açıklayan kısa ve profesyonel bir Türkçe mesaj."
         }`;

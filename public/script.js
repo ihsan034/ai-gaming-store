@@ -19,7 +19,8 @@ const categoryTranslations = {
     "RAM": "Bellek (RAM)",
     "Power": "Güç Kaynağı (PSU)",
     "SSD": "Depolama (SSD)",
-    "Case": "Kasa (Case)"
+    "Case": "Kasa (Case)",
+    "Cooler": "İşlemci Soğutucu"
 };
 
 async function loadProducts() {
@@ -108,8 +109,9 @@ function renderProducts(productIds, totalPrice, priceOverrides = {}) {
     const hasPSU = [...categories].some(c => c.includes("Güç Kaynağı") || c.includes("PSU"));
     const hasSSD = [...categories].some(c => c.includes("Depolama") || c.includes("SSD"));
     const hasCase = [...categories].some(c => c.includes("Kasa") || c.includes("Case"));
+    const hasCooler = [...categories].some(c => c.includes("Soğutucu") || c.includes("Cooler"));
 
-    const isFullSystem = hasCPU && hasGPU && hasMB && hasRAM && hasPSU && hasSSD && hasCase;
+    const isFullSystem = hasCPU && hasGPU && hasMB && hasRAM && hasPSU && hasSSD && hasCase && hasCooler;
 
     if (isFullSystem) {
         totalPriceContainer.style.display = 'block';

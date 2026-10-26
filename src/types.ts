@@ -2,7 +2,7 @@
 // ORTAK TİPLER
 // ============================================================
 
-export type Category = 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Power' | 'SSD' | 'Case';
+export type Category = 'CPU' | 'GPU' | 'Motherboard' | 'RAM' | 'Power' | 'SSD' | 'Case' | 'Cooler';
 
 export interface Product {
     id: number;
