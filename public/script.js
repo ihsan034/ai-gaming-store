@@ -142,6 +142,12 @@ function renderProducts(productIds, totalPrice, priceOverrides = {}) {
             productsGrid.appendChild(card);
         }
     });
+
+    // Telefon ve tablette ürünler sohbetin altında kalır: klavyeyi kapatıp sonuçlara götür
+    if (productIds.length > 0 && window.matchMedia('(max-width: 900px)').matches) {
+        userInput.blur();
+        document.querySelector('.recommendation-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 // --- EVENT LISTENERS ---

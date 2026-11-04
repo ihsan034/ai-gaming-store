@@ -29,7 +29,8 @@
         
         .cart-item {
             display: flex; 
-            justify-content: space-between; 
+            justify-content: space-between;
+            gap: 12px;
             padding: 15px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
@@ -183,7 +184,7 @@
                             <strong>${item.brand} ${item.model}</strong> <br> 
                             <small style="color: #94a3b8">${item.category}</small>
                         </div>
-                        <div style="font-weight: bold; color: #10b981;">${item.price.toLocaleString('tr-TR')} TL</div>
+                        <div style="font-weight: bold; color: #10b981; white-space: nowrap;">${item.price.toLocaleString('tr-TR')} TL</div>
                     </div>
                 `;
             });

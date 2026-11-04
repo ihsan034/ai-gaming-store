@@ -457,29 +457,146 @@ h2 {
     border-color: #10b981;
 }
 
-/* Ekran genişliği 768px ve daha küçük olduğunda (Telefonlar için) */
-@media (max-width: 768px) {
+/* =========================================================
+   9. TABLET VE TELEFON
+   ========================================================= */
+@media (max-width: 900px) {
 
-    /* Yan yana duran ana kapsayıcıyı alt alta getirir */
-    .main-container,
-    .container,
-    .app-layout {
-        flex-direction: column !important;
-        padding: 10px !important;
+    /* Sayfa ekrana kilitli kalmaz, aşağı kaydırılır */
+    body {
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        justify-content: flex-start;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
 
-    /* Sol ve sağ kutuların genişliğini mobilde tam ekran yapar */
-    .sidebar,
-    .chat-section,
-    .products-section,
-    .hardware-list {
-        width: 100% !important;
-        margin-bottom: 20px;
+    .user-nav {
+        width: 100%;
+        padding: 12px 16px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        gap: 10px;
     }
 
-    /* Başlık yazı boyutunu mobilde biraz küçültür */
-    h1 {
-        font-size: 20px !important;
-        text-align: center;
+    .site-logo {
+        white-space: nowrap;
+    }
+
+    .nav-right {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .nav-btn,
+    .cart-icon {
+        white-space: nowrap;
+    }
+
+    .main-header h1 {
+        font-size: 1.3rem;
+        padding: 0 16px;
+        margin-bottom: 12px;
+    }
+
+    /* Sohbet üstte, önerilen ürünler altta */
+    .app-container {
+        flex-direction: column;
+        width: calc(100% - 24px);
+        height: auto;
+        margin-bottom: 16px;
+        flex-shrink: 0;
+    }
+
+    .chat-section {
+        flex: none;
+        padding: 16px;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .chat-box {
+        flex: none;
+        height: 45vh;
+        min-height: 220px;
+    }
+
+    .recommendation-section {
+        flex: none;
+        padding: 16px;
+    }
+
+    /* Ürünler kendi içinde değil, sayfayla birlikte kayar */
+    .products-grid {
+        flex: none;
+        overflow-y: visible;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+
+    .empty-state {
+        margin: 24px 0;
+    }
+
+    .modal-content {
+        width: min(350px, 92vw);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .site-logo {
+        font-size: 1.35rem;
+    }
+
+    .nav-right {
+        width: 100%;
+    }
+
+    #authArea {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .nav-btn,
+    .cart-icon {
+        padding: 8px 16px;
+    }
+
+    .main-header h1 {
+        font-size: 1.15rem;
+    }
+
+    h2 {
+        font-size: 1.2rem;
+    }
+
+    .message {
+        max-width: 92%;
+    }
+
+    #userInput {
+        min-width: 0;
+        padding: 12px;
+    }
+
+    #userInput::placeholder {
+        font-size: 0.875rem;
+    }
+
+    #sendBtn {
+        padding: 8px 16px;
+    }
+
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dokunmatik ekranlarda kart, dokunduktan sonra yukarıda takılı kalmasın */
+@media (hover: none) {
+    .product-card:hover {
+        transform: none;
     }
 }
