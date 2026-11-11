@@ -31,6 +31,8 @@ const PRICE_SEARCH_THINKING = ThinkingLevel.LOW;
 
 // Yapay zekâya sadece piyasada bulunan ürünler gösterilir (stok 0 = artık satılmıyor)
 const availableProducts = products.filter(p => p.stock > 0);
+// Her öneri isteğinde prompt'a giden katalog: girintisiz ve yapay zekânın kullanmadığı stok alanı olmadan
+const catalogForPrompt = JSON.stringify(availableProducts.map(({ stock, ...rest }) => rest));
 
 // Render'da istek kullanıcı → Cloudflare → Render iç ağı → sunucu yolunu izler (loglarla doğrulandı:
 // x-forwarded-for = "kullanıcı, cloudflare, 10.x"). 3 adıma güvenince req.ip Cloudflare'in yazdığı
@@ -274,7 +276,7 @@ app.post('/api/recommend-pc', recommendLimiter, async (
         Görevin, kullanıcının isteklerine (bütçe, oyun/program tercihleri, özel istekler) en uygun bilgisayar sistemini oluşturmaktır.
 
         AŞAĞIDAKİ ÜRÜN HAVUZUNU KULLANMAK ZORUNDASIN. Havuzda olmayan hiçbir ürünü listeye ekleme:
-        ${JSON.stringify(availableProducts, null, 2)}
+        ${catalogForPrompt}
 
         UYULMASI ZORUNLU KURALLAR:
         1. Toplam sistem fiyatı kullanıcının belirttiği bütçeyi kesinlikle AŞMAMALIDIR.
@@ -331,7 +333,8 @@ app.post('/api/recommend-pc', recommendLimiter, async (
         recommendedIds.forEach(id => {
             const product = availableProducts.find(p => p.id === Number(id));
             if (product) {
-                selectedProducts.push(product);
+                // Aynı ürün iki kez önerilirse toplam fiyata iki kez yazılmasın
+                if (!selectedProducts.includes(product)) selectedProducts.push(product);
             } else {
                 console.warn(`⚠️ Geçersiz ürün ID'si önerildi: ${id}`);
             }

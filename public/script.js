@@ -40,9 +40,15 @@ async function loadProducts() {
 loadProducts();
 
 // --- GÖNDERME FONKSİYONU ---
+// Cevap beklenirken ikinci bir (ücretli) istek gönderilmesin
+let isSending = false;
+
 async function handleSend() {
     const text = userInput.value.trim();
-    if (!text) return;
+    if (!text || isSending) return;
+
+    isSending = true;
+    sendBtn.disabled = true;
 
     appendMessage(text, 'user-message');
     userInput.value = '';
@@ -75,6 +81,9 @@ async function handleSend() {
         console.error("Hata:", error);
         document.getElementById(loadingMessageId).remove();
         appendMessage("Sunucuya bağlanılamadı. Lütfen backend'in çalıştığından emin olun.", 'ai-message');
+    } finally {
+        isSending = false;
+        sendBtn.disabled = false;
     }
 }
 

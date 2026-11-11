@@ -60,8 +60,12 @@ const perIpDay = new FixedWindowCounter(LIMITS.perIpPerDay, DAY_MS);
 const globalDay = new FixedWindowCounter(LIMITS.globalPerDay, DAY_MS);
 
 export function recommendLimiter(req: Request, res: Response<ErrorResponse>, next: NextFunction) {
+    // Geçersiz istekler sayaçlara yazılmadan reddedilir; yoksa boş isteklerle günlük hak tüketilebilir
     const prompt: unknown = req.body?.userPrompt;
-    if (typeof prompt === 'string' && prompt.length > LIMITS.maxPromptLength) {
+    if (typeof prompt !== 'string' || prompt.trim() === '') {
+        return res.status(400).json({ error: "Lütfen yapay zekaya bir mesaj gönderin." });
+    }
+    if (prompt.length > LIMITS.maxPromptLength) {
         return res.status(400).json({ error: `Mesajınız en fazla ${LIMITS.maxPromptLength} karakter olabilir.` });
     }
 

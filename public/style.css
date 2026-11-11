@@ -144,6 +144,12 @@ body {
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
 }
 
+#sendBtn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* Sepet İkonu */
 .cart-icon {
     background-color: rgba(35, 40, 64, 0.6);
