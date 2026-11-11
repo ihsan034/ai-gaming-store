@@ -74,6 +74,12 @@ async function handleSend() {
         const cleanedText = String(data.ai_explanation || '').replace(/\*\*/g, '');
         appendMessage(cleanedText, 'ai-message');
 
+        // Sayfa açıldıktan sonra katalog güncellendiyse yeni ürünleri tanımak için listeyi yeniden yükle
+        const ids = data.recommended_product_ids || [];
+        if (ids.some(id => !allProducts.some(p => p.id === id))) {
+            await loadProducts();
+        }
+
         // Gerçek fiyatları da renderProducts'a gönder
         renderProducts(data.recommended_product_ids, data.total_price, data.price_overrides || {});
 
