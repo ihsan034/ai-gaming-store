@@ -106,13 +106,18 @@ function renderProducts(productIds, totalPrice, priceOverrides = {}) {
     currentPriceOverrides = priceOverrides;
 
     const categories = new Set();
+    let hasIntegratedGraphics = false;
     productIds.forEach(id => {
         const product = allProducts.find(p => p.id === id);
-        if (product) categories.add(product.category);
+        if (product) {
+            categories.add(product.category);
+            if (product.specs?.integrated_graphics) hasIntegratedGraphics = true;
+        }
     });
 
     const hasCPU = [...categories].some(c => c.includes("İşlemci") || c.includes("CPU"));
-    const hasGPU = [...categories].some(c => c.includes("Ekran Kartı") || c.includes("GPU"));
+    // Dahili grafikli işlemci varsa ekran kartsız sistem de tam sistemdir
+    const hasGPU = hasIntegratedGraphics || [...categories].some(c => c.includes("Ekran Kartı") || c.includes("GPU"));
     const hasMB = [...categories].some(c => c.includes("Anakart"));
     const hasRAM = [...categories].some(c => c.includes("Bellek") || c.includes("RAM"));
     const hasPSU = [...categories].some(c => c.includes("Güç Kaynağı") || c.includes("PSU"));

@@ -282,6 +282,8 @@ app.post('/api/recommend-pc', recommendLimiter, async (
         1. Toplam sistem fiyatı kullanıcının belirttiği bütçeyi kesinlikle AŞMAMALIDIR.
         2. Seçtiğin parçalar birbiriyle uyumlu olmalıdır (AM4↔AM4↔DDR4, AM5↔AM5↔DDR5, LGA1700↔LGA1700).
         3. Kullanıcı komple bir bilgisayar toplamak istiyorsa sistemde mutlaka en az 1 adet CPU, 1 adet GPU, 1 adet Motherboard, 1 adet RAM, 1 adet Power (PSU), 1 adet SSD, 1 adet Case ve 1 adet Cooler (işlemci soğutucu) bulunmalıdır. Katalogdaki işlemciler soğutucusuz satılır.
+           İSTİSNA: specs'inde integrated_graphics olan işlemcilerde (i5-12400, Ryzen 5 8600G) GPU zorunlu değildir. Bütçe ekran kartlı bir sisteme yetmiyorsa ekran kartsız sistem kur ve açıklamada dahili grafiğin neleri kaldırabileceğini, ileride ekran kartı eklenebileceğini belirt. Bütçe kartlı sisteme yetiyorsa ve kullanıcı oyun oynamak istiyorsa ekran kartı ekle.
+           Önemli: bu istisna yalnızca integrated_graphics alanı olan işlemciler içindir; diğer işlemcilerle her zaman GPU seç.
         4. Kullanıcı sadece belirli bir parça istiyorsa (Örn: "sadece ekran kartı göster") sadece o kategorileri listele.
         5. Soğutucu işlemcinin gücüne uygun olmalıdır: 65W işlemciye herhangi bir soğutucu; 105W-120W işlemciye en az "Hava - tek kule"; 125W işlemciye (i5-14600K, i7-14700K) "Hava - çift kule" veya sıvı; i9-14900K'ya sıvı soğutucu (tercihen 360mm).
         6. Güç kaynağının gücü, ekran kartının power_recommendation değerinden düşük olmamalıdır.

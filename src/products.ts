@@ -3,9 +3,10 @@ import type { Product } from './types';
 // Fiyatlar 24-25.10.2026'da Akakçe'deki en ucuz satış fiyatlarına göre güncellendi;
 // piyasadan kalkan ürünler güncel muadilleriyle (ör. RTX 40 → RTX 50) değiştirildi.
 // stock: 0 → piyasada artık bulunamayan ürün; yapay zekâya önerilmez.
+// ID 73-76 (düşük bütçe parçaları) 11.11.2026'da Akakçe fiyatlarıyla eklendi.
 
 export const products: Product[] = [
-    // --- İŞLEMCİLER (CPU) - 10 ADET ---
+    // --- İŞLEMCİLER (CPU) - 12 ADET ---
     { id: 1, category: "CPU", brand: "AMD", model: "Ryzen 5 5600", price: 5957, stock: 15, specs: { socket: "AM4", ram_type: "DDR4", power: "65W" } },
     { id: 2, category: "CPU", brand: "Intel", model: "Core i5-12400F", price: 6453, stock: 12, specs: { socket: "LGA1700", ram_type: "DDR4", power: "65W" } },
     { id: 3, category: "CPU", brand: "Intel", model: "Core i5-13400F", price: 10999, stock: 10, specs: { socket: "LGA1700", ram_type: "DDR4/DDR5", power: "65W" } },
@@ -16,8 +17,11 @@ export const products: Product[] = [
     { id: 8, category: "CPU", brand: "AMD", model: "Ryzen 7 7800X3D", price: 15981, stock: 5, specs: { socket: "AM5", ram_type: "DDR5", power: "120W" } },
     { id: 9, category: "CPU", brand: "Intel", model: "Core i7-14700K", price: 19019, stock: 4, specs: { socket: "LGA1700", ram_type: "DDR5", power: "125W" } },
     { id: 10, category: "CPU", brand: "Intel", model: "Core i9-14900K", price: 22999, stock: 3, specs: { socket: "LGA1700", ram_type: "DDR5", power: "125W" } },
+    // Dahili grafikli işlemciler: düşük bütçede ekran kartı olmadan da görüntü verir
+    { id: 73, category: "CPU", brand: "Intel", model: "Core i5-12400", price: 8092, stock: 15, specs: { socket: "LGA1700", ram_type: "DDR4/DDR5", power: "65W", integrated_graphics: "Intel UHD 730 (ofis, film, hafif oyunlar)" } },
+    { id: 74, category: "CPU", brand: "AMD", model: "Ryzen 5 8600G", price: 9599, stock: 12, specs: { socket: "AM5", ram_type: "DDR5", power: "65W", integrated_graphics: "Radeon 760M (e-spor oyunları 1080p düşük ayarda)" } },
 
-    // --- EKRAN KARTLARI (GPU) - 13 ADET ---
+    // --- EKRAN KARTLARI (GPU) - 14 ADET ---
     { id: 11, category: "GPU", brand: "AMD", model: "Radeon RX 6600", price: 25275, stock: 14, specs: { vram: "8GB", power_recommendation: "500W" } },
     { id: 12, category: "GPU", brand: "NVIDIA", model: "RTX 3060", price: 28419, stock: 11, specs: { vram: "12GB", power_recommendation: "550W" } },
     { id: 13, category: "GPU", brand: "AMD", model: "Radeon RX 7600", price: 20459, stock: 20, specs: { vram: "8GB", power_recommendation: "550W" } },
@@ -31,6 +35,7 @@ export const products: Product[] = [
     { id: 68, category: "GPU", brand: "Asus", model: "RTX 5060 Ti Dual OC 8GB", price: 36703, stock: 20, specs: { vram: "8GB", power_recommendation: "600W" } },
     { id: 69, category: "GPU", brand: "MSI", model: "RTX 5060 Ti Shadow 2X OC 16GB", price: 52169, stock: 15, specs: { vram: "16GB", power_recommendation: "600W" } },
     { id: 70, category: "GPU", brand: "Gigabyte", model: "RX 9060 XT Gaming OC 16GB", price: 36598, stock: 15, specs: { vram: "16GB", power_recommendation: "550W" } },
+    { id: 75, category: "GPU", brand: "Asus", model: "RTX 3050 Dual OC 6GB", price: 16499, stock: 15, specs: { vram: "6GB", power_recommendation: "450W" } },
 
     // --- ANAKARTLAR (Motherboard) - 12 ADET ---
     { id: 21, category: "Motherboard", brand: "Gigabyte", model: "H610M H", price: 3928, stock: 16, specs: { socket: "LGA1700", ram_type: "DDR4" } },
@@ -70,12 +75,13 @@ export const products: Product[] = [
     { id: 49, category: "Power", brand: "MSI", model: "MAG A850GL Gen5 850W Gold", price: 6999, stock: 10, specs: { wattage: 850 } },
     { id: 50, category: "Power", brand: "Asus", model: "ROG Thor 1000W Platinum II", price: 17107, stock: 3, specs: { wattage: 1000 } },
 
-    // --- DEPOLAMA (SSD) - 5 ADET ---
+    // --- DEPOLAMA (SSD) - 6 ADET ---
     { id: 51, category: "SSD", brand: "Crucial", model: "500GB P3 Plus NVMe M.2", price: 7487, stock: 20, specs: { capacity: "500GB", read_speed: "4700MB/s" } },
     { id: 52, category: "SSD", brand: "Samsung", model: "1TB 980 NVMe M.2", price: 11949, stock: 15, specs: { capacity: "1TB", read_speed: "3500MB/s" } },
     { id: 53, category: "SSD", brand: "Kingston", model: "1TB NV2 NVMe M.2", price: 8799, stock: 25, specs: { capacity: "1TB", read_speed: "3500MB/s" } },
     { id: 54, category: "SSD", brand: "Samsung", model: "2TB 990 Pro NVMe M.2", price: 23279, stock: 8, specs: { capacity: "2TB", read_speed: "7450MB/s" } },
     { id: 55, category: "SSD", brand: "Kingston", model: "2TB KC3000 NVMe M.2", price: 20899, stock: 10, specs: { capacity: "2TB", read_speed: "7000MB/s" } },
+    { id: 76, category: "SSD", brand: "Goodram", model: "512GB PX600 Lite NVMe M.2", price: 4799, stock: 20, specs: { capacity: "512GB", interface: "PCIe 4.0" } },
 
     // --- KASALAR (Case) - 5 ADET ---
     { id: 56, category: "Case", brand: "NZXT", model: "H7 Flow 2024", price: 3579, stock: 12, specs: { form_factor: "ATX Mid Tower", fans: "Fanlı" } },
