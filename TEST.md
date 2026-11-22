@@ -51,8 +51,23 @@ npm run dev
 
 `http://localhost:5000` açılıp bir mesaj gönderildiğinde sabit, uyumlu 8 parçalık demo sistemi gelir; 8 ürün kartı ve toplam fiyat görünür. Bu kontrol 22 Kasım 2026'da yapıldı (sunucu derlenmiş hâliyle çalıştırıldı, tarayıcıda 8 kart ve toplam fiyat doğrulandı).
 
+## Gerçek Gemini ile tek istek (elle)
+
+22 Kasım 2026'da, kalıplar uygulandıktan sonra, derlenmiş sunucu gerçek Gemini sağlayıcısıyla (`AI_PROVIDER` varsayılanı) çalıştırıldı ve tek bir istek gönderildi: "40 bin TL ye oyun bilgisayari topla".
+
+| Ölçüm | Sonuç |
+|---|---|
+| Toplam süre | 46 sn (öneri 27 sn, fiyat araması 18 sn) |
+| Önerilen sistem | Ryzen 5 5600, RTX 3050 6GB, MSI A520M-A Pro, 8GB DDR4, 600W güç kaynağı, 512GB SSD, kasa, soğutucu |
+| Toplam fiyat | 39.513 TL (bütçe 40.000 TL) |
+| Canlı fiyat | 8 üründen 8'i arama kaynağıyla doğrulandı |
+| `is_full_system` | `true`, eksik kategori yok |
+| Doğrulama uyarıları | Yok |
+
+Bu, `GeminiClientAdapter`'ın gerçek SDK ile çalıştığını (JSON yanıt, Google arama aracı, arama kaynaklarının okunması) gösterir. Tek istek olduğu için istatistiksel bir ölçüm değildir. Bu istekte yapay zekânın `budget_tl` alanını doğru doldurup doldurmadığı ayrıca doğrulanmadı; toplam bütçenin altında olduğu için bütçe uyarısı da çıkmadı.
+
 ## Kapsam dışı olanlar
 
-- **Gerçek Gemini çağrısı:** `GeminiClientAdapter` yalnızca sahte bir SDK nesnesiyle test edilir. SDK'nın gerçek davranışı (ör. arama kaynaklarının biçimi) otomatik testlerle denetlenmez; yayına almadan önce tek bir gerçek istekle (yaklaşık 4 TL) elle denenmelidir.
+- **Gerçek Gemini çağrıları:** Otomatik testlerde `GeminiClientAdapter` yalnızca sahte bir SDK nesnesiyle denenir. Adaptörde ya da sistem talimatında bir değişiklik yapılırsa yukarıdaki gibi tek bir gerçek istekle (yaklaşık 4 TL) elle yeniden denenmelidir.
 - **Tarayıcı arayüzü:** `public/script.js` için otomatik test yoktur; arayüz elle denenmiştir.
 - **Yük ve performans:** Yanıt süresi ve maliyet ölçümleri gerçek isteklerle elle yapılmıştır, otomatik test değildir.
