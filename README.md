@@ -62,13 +62,24 @@ Gemini kredisini korumak için öneri isteği sınırlandırılır. Varsayılanl
 
 ```
 src/
-  server.ts     Express sunucusu ve API rotaları
-  products.ts   Ürün kataloğu
-  types.ts      Ortak tipler (Product, istek/yanıt tipleri)
-  rateLimit.ts  IP başına ve günlük toplam istek sınırları
-public/         Arayüz (HTML, CSS, JavaScript)
-dist/           Derlenmiş çıktı (npm run build ile oluşur, Git'e eklenmez)
+  server.ts, app.ts, composition.ts   Giriş noktası, Express uygulaması, parçaların birbirine bağlanması
+  RecommendationService.ts            Öneri akışını yöneten sınıf
+  ai/          Adapter, Decorator ve Abstract Factory (Gemini ve sahte sağlayıcı)
+  pricing/     Strategy (katalog fiyatı / canlı fiyat)
+  builder/     Builder (PCBuild, Director'lar)
+  validation/  Chain of Responsibility (uyumluluk ve bütçe kuralları)
+  products.ts  Ürün kataloğu
+  rateLimit.ts IP başına ve günlük toplam istek sınırları
+public/        Arayüz (HTML, CSS, JavaScript)
+test/          Otomatik testler (npm test)
+dist/          Derlenmiş çıktı (npm run build ile oluşur, Git'e eklenmez)
 ```
+
+## 📚 Dokümanlar
+
+- [KURULUM.md](KURULUM.md): kurulum, ortam değişkenleri, kredisiz (mock) mod, yayın
+- [TASARIM-KALIPLARI.md](TASARIM-KALIPLARI.md): kullanılan 6 tasarım kalıbı, çözdükleri problemler ve sınıf diyagramları
+- [TEST.md](TEST.md): testlerin çalıştırılması ve kapsamı
 
 ## 🧩 Nasıl Çalışıyor?
 
@@ -76,7 +87,8 @@ dist/           Derlenmiş çıktı (npm run build ile oluşur, Git'e eklenmez)
 2. Gemini API, uygun bileşenleri (CPU, GPU, RAM, anakart vb.) öneriyor
 3. Google Search Grounding ile her bileşenin güncel Türkiye pazarı fiyatı doğrulanıyor
 4. Fiyat doğrulama mantığı geçersiz (negatif/boş) değerleri tespit edip düzeltiyor
-5. Kullanıcıya bütçeye uygun, güncel fiyatlı tam bir PC yapılandırması sunuluyor
+5. Sunucu, seçilen sistemi uyumluluk ve bütçe kurallarından geçirip bulduğu uyarıları bildiriyor
+6. Kullanıcıya bütçeye uygun, güncel fiyatlı tam bir PC yapılandırması sunuluyor
 
 ## 📌 Notlar
 
