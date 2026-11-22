@@ -74,6 +74,11 @@ async function handleSend() {
         const cleanedText = String(data.ai_explanation || '').replace(/\*\*/g, '');
         appendMessage(cleanedText, 'ai-message');
 
+        // Sunucudaki doğrulama zincirinin bulduğu uyumsuzluk ve bütçe uyarıları
+        if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+            appendMessage('⚠️ Dikkat: ' + data.warnings.join(' '), 'ai-message');
+        }
+
         // Sayfa açıldıktan sonra katalog güncellendiyse yeni ürünleri tanımak için listeyi yeniden yükle
         const ids = data.recommended_product_ids || [];
         if (ids.some(id => !allProducts.some(p => p.id === id))) {
@@ -81,7 +86,7 @@ async function handleSend() {
         }
 
         // Gerçek fiyatları da renderProducts'a gönder
-        renderProducts(data.recommended_product_ids, data.total_price, data.price_overrides || {});
+        renderProducts(data.recommended_product_ids, data.total_price, data.price_overrides || {}, data.is_full_system === true);
 
     } catch (error) {
         console.error("Hata:", error);
@@ -107,31 +112,10 @@ function appendMessage(text, className) {
 
 // --- ÖNERİLEN ÜRÜNLERİ DİNAMİK OLARAK BASMA ---
 // priceOverrides: { productId: gercekFiyat } — gerçek piyasa fiyatları
-function renderProducts(productIds, totalPrice, priceOverrides = {}) {
+// isFullSystem: sunucudaki PCBuild (Builder kalıbı) hesaplar; arayüzde kategori adı eşleştirmesi yapılmaz
+function renderProducts(productIds, totalPrice, priceOverrides = {}, isFullSystem = false) {
     productsGrid.innerHTML = '';
     currentPriceOverrides = priceOverrides;
-
-    const categories = new Set();
-    let hasIntegratedGraphics = false;
-    productIds.forEach(id => {
-        const product = allProducts.find(p => p.id === id);
-        if (product) {
-            categories.add(product.category);
-            if (product.specs?.integrated_graphics) hasIntegratedGraphics = true;
-        }
-    });
-
-    const hasCPU = [...categories].some(c => c.includes("İşlemci") || c.includes("CPU"));
-    // Dahili grafikli işlemci varsa ekran kartsız sistem de tam sistemdir
-    const hasGPU = hasIntegratedGraphics || [...categories].some(c => c.includes("Ekran Kartı") || c.includes("GPU"));
-    const hasMB = [...categories].some(c => c.includes("Anakart"));
-    const hasRAM = [...categories].some(c => c.includes("Bellek") || c.includes("RAM"));
-    const hasPSU = [...categories].some(c => c.includes("Güç Kaynağı") || c.includes("PSU"));
-    const hasSSD = [...categories].some(c => c.includes("Depolama") || c.includes("SSD"));
-    const hasCase = [...categories].some(c => c.includes("Kasa") || c.includes("Case"));
-    const hasCooler = [...categories].some(c => c.includes("Soğutucu") || c.includes("Cooler"));
-
-    const isFullSystem = hasCPU && hasGPU && hasMB && hasRAM && hasPSU && hasSSD && hasCase && hasCooler;
 
     if (isFullSystem) {
         totalPriceContainer.style.display = 'block';

@@ -14,9 +14,6 @@ export interface Product {
     specs: Record<string, string | number>;
 }
 
-// Gerçek fiyat haritası: { "ID1": 4200, "ID11": 9500 }
-export type LivePrices = Record<string, number>;
-
 // --- /api/recommend-pc ---
 
 export interface RecommendRequest {
@@ -28,6 +25,11 @@ export interface RecommendResponse {
     total_price: number;
     ai_explanation: string;
     price_overrides: Record<number, number>;
+    // PCBuild'den (Builder kalıbı) gelir: arayüz artık Türkçe kategori adı eşleştirmesi yapmaz
+    is_full_system: boolean;
+    missing_categories: Category[];
+    // Doğrulama zincirinin (Chain of Responsibility) bulduğu uyumsuzluk ve bütçe uyarıları
+    warnings: string[];
 }
 
 export interface ErrorResponse {
@@ -39,4 +41,5 @@ export interface AiRecommendation {
     recommended_product_ids?: unknown;
     total_price?: unknown;
     ai_explanation?: unknown;
+    budget_tl?: unknown;
 }
