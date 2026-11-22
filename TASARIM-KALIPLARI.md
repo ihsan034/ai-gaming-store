@@ -25,6 +25,19 @@ Kalıplar uygulanmadan önce kodun büyük kısmı tek bir 390 satırlık `serve
 
 Kalıpları birbirine bağlayan sınıf [`RecommendationService`](src/RecommendationService.ts), bağlama işinin yapıldığı yer ise [`composition.ts`](src/composition.ts).
 
+## Kalıp Haritası
+
+Her kalıp için çözülen problem, katılımcı roller ve onları karşılayan sınıflar, değerlendirilen alternatif tasarım ve seçilen çözümün bedeli. UML sınıf diyagramları aşağıdaki kalıp bölümlerinde, sıralama diyagramı "Bir öneri isteğinin yolu" bölümündedir.
+
+| Kalıp | Çözülen problem | Katılımcı roller ve karşılayan sınıflar | Değerlendirilen alternatif | Seçilen çözümün bedeli |
+|---|---|---|---|---|
+| **Abstract Factory** | Öneri ve fiyat istemcileri birlikte, aynı sağlayıcıdan gelmeli; gerçek sağlayıcıyı kredi harcamadan değiştirmek gerekiyor | AbstractFactory: `AIProviderFactory`<br>ConcreteFactory: `GeminiProviderFactory`, `MockProviderFactory`<br>AbstractProduct: `LLMClient`<br>ConcreteProduct: `Logging(Retrying(GeminiClientAdapter))`, `MockLLMClient`<br>Client: `composition.ts`, `RecommendationService` | `AI_PROVIDER` değerine göre `if/else` ile doğrudan `new` çağırmak; ya da her istemci için ayrı bir Factory Method | Üç ek sınıf. Tek gerçek sağlayıcı (Gemini) varken fazla görünebilir. Fabrikaya yeni bir ürün tipi (üçüncü istemci) eklemek tüm fabrikaları değiştirir |
+| **Builder** | "Tam sistem mi?" bilgisi arayüzde Türkçe kategori adlarıyla hesaplanıyordu; komple ve tek parça istekleri farklı kurulmalı | Builder: `PCBuildBuilder` (soyut Builder arayüzü yok, tek somut builder)<br>Director: `BuildDirector` arayüzü, `FullSystemDirector`, `PartsOnlyDirector`<br>Product: `PCBuild`<br>Client: `RecommendationService` (`selectDirector`) | Hesaplamayı `PCBuild` kurucusuna koymak ya da tek bir `buildSystem()` fonksiyonu yazmak | Küçük bir iş için üç sınıf ve bir arayüz: iki Director arasındaki fark yalnızca "komple sistem kontrolü" adımı. Kalıbın değeri tekrar eden ürünü atması, dahili grafik istisnasını uygulaması ve değişmez bir `PCBuild` üretmesinde; yeni bir istek türü eklenmezse getirisi sınırlı |
+| **Adapter** | SDK'nın biçimi (`generateContent`, `groundingMetadata`) tüm koda yayılmıştı | Target: `LLMClient`<br>Adapter: `GeminiClientAdapter`<br>Adaptee: `GoogleGenAI` (SDK)<br>Client: `RecommendationService`, `LivePricing` | SDK'yı doğrudan çağırmak, en fazla bir yardımcı fonksiyonla (Facade) sadeleştirmek | Bir ek katman. Arayüz yalnızca `generate` içerir; SDK'nın akış (stream) gibi özellikleri arayüzde yok, istenirse arayüz genişler. Şimdilik tek bir Adaptee var |
+| **Decorator** | Yeniden deneme ve loglama iş mantığının içine gömülüydü | Component: `LLMClient`<br>ConcreteComponent: `GeminiClientAdapter`, `MockLLMClient`<br>ConcreteDecorator: `RetryingLLMClient`, `LoggingLLMClient` (ortak soyut Decorator sınıfı yok, ikisi doğrudan `LLMClient`'ı uygular)<br>Client: `GeminiProviderFactory` zinciri kurar | Kalıtım (`RetryingGeminiClient extends GeminiClientAdapter`): Logging ile Retry kombinasyonları sınıf sayısını patlatır; ya da retry kodunu adaptörün içine gömmek | Zincir sırası önemli (Logging dışta, Retrying içte). Her dekoratör arayüzün tüm metotlarını sarmalamalı (şimdilik tek metot). Çağrı yığını uzar, hata ayıklamak biraz zorlaşır |
+| **Chain of Responsibility** | Uyumluluk ve bütçe sunucuda hiç denetlenmiyordu | Handler: `CompatibilityRule` (soyut sınıf)<br>ConcreteHandler: `SocketMatchRule`, `MemoryTypeRule`, `PsuWattageRule`, `CoolerRule`, `BudgetRule`<br>Client: `createValidationChain`, `RecommendationService` | Kural listesi üzerinde döngü (`rules.forEach(...)`) | Bizim zincirde tüm halkalar çalışıp ihlalleri topluyor; klasik CoR'daki "ilk uygun halka işi alıp durur" özelliği kullanılmıyor, bu yüzden davranış bir kural listesi döngüsünden farksız. Kalıp, kuralların bağımsız halkalar olarak eklenip çıkarılabilmesi ve ileride "kritik hatada zinciri kes" gibi bir davranışın eklenebilmesi için seçildi |
+| **Strategy** | "Bir ürünün bugünkü fiyatı" tek bir yerde sabitlenmişti | Strategy: `PricingStrategy`<br>ConcreteStrategy: `CatalogPricing`, `LivePricing`<br>Context: `RecommendationService`<br>Client: `composition.ts` stratejiyi seçer | `if (mode === 'live')` dalları ya da bir fonksiyon (lambda) | Bir arayüz ve iki sınıf. `LivePricing` önbellek durumunu tuttuğu için tek örnek yaşatılmalı. Strateji yalnızca sunucu başlarken seçilir, istek başına değil |
+
 ## Bir öneri isteğinin yolu
 
 ```mermaid
@@ -37,6 +50,34 @@ flowchart TD
     F --> G["Doğrulama zinciri<br/>Socket → Memory → Psu → Cooler → Budget<br/><i>Chain of Responsibility</i>"]
     G --> H["JSON yanıt: ürünler, toplam, is_full_system, warnings"]
     I["AIProviderFactory<br/><i>Abstract Factory</i>"] -. öneri ve fiyat istemcilerini üretir .-> C
+```
+
+### Sıralama diyagramı
+
+Aynı isteğin nesneler arasındaki mesaj akışı:
+
+```mermaid
+sequenceDiagram
+    participant T as Tarayıcı
+    participant A as app.ts
+    participant S as RecommendationService
+    participant R as Öneri istemcisi
+    participant P as PricingStrategy
+    participant D as Director ve Builder
+    participant V as Doğrulama zinciri
+    T->>A: POST /api/recommend-pc
+    A->>S: recommend(userPrompt)
+    S->>R: generate(prompt, sistem talimatı)
+    Note over R: Logging, Retrying ve Adapter sırayla çalışır
+    R-->>S: JSON (ürün ID'leri, budget_tl)
+    S->>P: getPrices(seçilen ürünler)
+    P-->>S: PriceMap
+    S->>D: construct(parçalar, fiyatlar)
+    D-->>S: PCBuild
+    S->>V: validate(build, bütçe)
+    V-->>S: ihlaller
+    S-->>A: RecommendResponse
+    A-->>T: JSON yanıt
 ```
 
 ## 1. Abstract Factory — sağlayıcı ailesi
@@ -109,7 +150,7 @@ classDiagram
         +generate(request) LLMResponse
     }
     class GoogleGenAI {
-        <<Adaptee: SDK>>
+        <<Adaptee SDK>>
         +models.generateContent()
     }
     LLMClient <|.. GeminiClientAdapter
@@ -198,4 +239,7 @@ classDiagram
 
 - Doğrulama zinciri ihlalleri **uyarı olarak bildirir**; sistemi otomatik düzeltmez veya yapay zekâya geri bildirimle yeniden sordurmaz. Bu, sonraki adım olarak düşünülmüştür.
 - Gerçek sağlayıcı yalnızca Gemini'dir; ikinci bir sağlayıcı (ör. başka bir model) eklenmemiştir. Mimari bunu bir fabrika ve bir adaptörle mümkün kılar.
-- Bütçe, yapay zekânın `budget_tl` alanına güvenir; model bütçeyi yanlış okursa `BudgetRule` yanlış karşılaştırma yapar.
+- Bütçe, yapay zekânın `budget_tl` alanına güvenir; model bütçeyi yanlış okursa `BudgetRule` yanlış karşılaştırma yapar. Gerçek Gemini ile yapılan tek denemede bu alanın doğru doldurulup doldurulmadığı ayrıca doğrulanmamıştır.
+- **Tasarımın bilinen bir sızıntısı:** Fiyat kaynağı doğrulaması Gemini'ye özgü iki şey içerir: `GROUNDING_REDIRECT_PREFIX` (Google'ın yönlendirme adresi, `src/pricing/priceParsing.ts`) ve fiyat arama metnindeki "Google arama sonucu" ifadesi (`src/pricing/LivePricing.ts`). Başka bir sağlayıcıya (ör. GPT) geçişte yeni fabrika ve adaptöre ek olarak bu doğrulamanın sağlayıcıya taşınması gerekir; yani geçiş tamamen "iki yeni sınıf"tan ibaret olmaz.
+- Sağlayıcı (`AI_PROVIDER`) ve fiyat kaynağı (`PRICING_MODE`) sunucu başlarken seçilir; istek başına değiştirilemez ve arayüzde bir seçici yoktur.
+- Builder ve Chain of Responsibility, Kalıp Haritası'nda belirtildiği gibi bu projede en ince uygulanan kalıplardır: Builder'daki iki Director yalnızca bir adımla ayrılır, zincir ise şu an bir kural listesi gibi davranır.
