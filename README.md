@@ -59,6 +59,8 @@ Gemini kredisini korumak için öneri isteği sınırlandırılır. Varsayılanl
 | `DAILY_RECOMMEND_LIMIT` | 30 | Tüm kullanıcılar için günlük toplam öneri isteği |
 | `MAX_PROMPT_LENGTH` | 500 | Mesajın en fazla karakter sayısı |
 
+> **Canlı sitedeki (Render) güncel ayarlar** (23.11.2026): `LIMIT_PER_IP_PER_MINUTE=6`, `LIMIT_PER_IP_PER_DAY=20`, `DAILY_RECOMMEND_LIMIT=80`. `MAX_PROMPT_LENGTH` tanımlı değildir, varsayılan 500 geçerlidir. Yukarıdaki tablo, ortam değişkeni verilmediğinde kodun kullandığı varsayılanlardır.
+
 > **Deployment notu:** Backend TypeScript ile yazıldığı için sunucuda derleme gerekir. Render'da Build Command `npm install && npm run build`, Start Command `npm start` olmalıdır.
 
 ## 🗂️ Proje Yapısı

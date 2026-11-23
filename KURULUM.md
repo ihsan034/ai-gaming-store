@@ -49,6 +49,8 @@ Hepsi `.env` dosyasına (ya da Render'da ortam değişkeni olarak) yazılır.
 | `DAILY_RECOMMEND_LIMIT` | `30` | Tüm kullanıcılar için günlük toplam öneri isteği |
 | `MAX_PROMPT_LENGTH` | `500` | Mesajın en fazla karakter sayısı |
 
+Yukarıdaki değerler, ortam değişkeni verilmediğinde kodun kullandığı **varsayılanlardır**. Canlı sitede (Render) şu an (23.11.2026) `LIMIT_PER_IP_PER_MINUTE=6`, `LIMIT_PER_IP_PER_DAY=20` ve `DAILY_RECOMMEND_LIMIT=80` ayarlıdır; `MAX_PROMPT_LENGTH` tanımlı değildir, varsayılan 500 geçerlidir.
+
 ## Kredisiz mod
 
 Gerçek yapay zekâ çağrısı yapmadan (anahtar gerekmeden, ücretsiz) denemek için `.env` dosyasına şunu yazın:
